@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<title>SmartAdmin</title>
+<meta name="description" content="">
+<meta name="author" content="">
+
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- #CSS Links -->
+<!-- Basic Styles -->
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/font-awesome.min.css">
+
+<!-- SmartAdmin Styles : Caution! DO NOT change the order -->
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-production-plugins.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-production.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-skins.min.css">
+
+<!-- We recommend you use "your_style.css" to override SmartAdmin
+		specific styles this will also ensure you retrain your customization with each SmartAdmin update.
+		<link rel="stylesheet" type="text/css" media="screen" href="css/your_style.css"> -->
+
+<!-- #FAVICONS -->
+<link rel="shortcut icon" href="resources/img/favicon.png"
+	type="image/x-icon">
+<link rel="icon" href="resources/img/favicon.png" type="image/x-icon">
+
+<!-- #GOOGLE FONT -->
+<link rel="stylesheet"
+	href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,300,400,700">
+</head>
+
+
+<!--
+
+	TABLE OF CONTENTS.
+	
+	Use search to find needed section.
+	
+	===================================================================
+	
+	|  01. #CSS Links                |  all CSS links and file paths  |
+	|  02. #FAVICONS                 |  Favicon links and file paths  |
+	|  03. #GOOGLE FONT              |  Google font link              |
+	|  04. #APP SCREEN / ICONS       |  app icons, screen backdrops   |
+	|  05. #BODY                     |  body tag                      |
+	|  06. #HEADER                   |  header tag                    |
+	|  07. #PROJECTS                 |  project lists                 |
+	|  08. #TOGGLE LAYOUT BUTTONS    |  layout buttons and actions    |
+	|  09. #MOBILE                   |  mobile view dropdown          |
+	|  10. #SEARCH                   |  search field                  |
+	|  11. #NAVIGATION               |  left panel & navigation       |
+	|  12. #RIGHT PANEL              |  right panel userlist          |
+	|  13. #MAIN PANEL               |  main panel                    |
+	|  14. #MAIN CONTENT             |  content holder                |
+	|  15. #PAGE FOOTER              |  page footer                   |
+	|  16. #SHORTCUT AREA            |  dropdown shortcuts area       |
+	|  17. #PLUGINS                  |  all scripts and plugins       |
+	
+	===================================================================
+	
+	-->
+
+<!-- #BODY -->
+<!-- Possible Classes
+
+		* 'smart-style-{SKIN#}'
+		* 'smart-rtl'         - Switch theme mode to RTL
+		* 'menu-on-top'       - Switch to top navigation (no DOM change required)
+		* 'no-menu'			  - Hides the menu completely
+		* 'hidden-menu'       - Hides the main menu but still accessable by hovering over left edge
+		* 'fixed-header'      - Fixes the header
+		* 'fixed-navigation'  - Fixes the main menu
+		* 'fixed-ribbon'      - Fixes breadcrumb
+		* 'fixed-page-footer' - Fixes footer
+		* 'container'         - boxed layout mode (non-responsive: will not work with fixed-navigation & fixed-ribbon)
+	-->
+<body class="">
+
+	<!-- HEADER -->
+	<header id="header">
+		<div id="logo-group">
+			<!-- PLACE YOUR LOGO HERE -->
+			<span id="logo"> <img src="resources/img/osc-logo.png"
+				alt="SmartAdmin">
+			</span>
+			<!-- END LOGO PLACEHOLDER -->
+		</div>
+
+	</header>
+	<!-- END HEADER -->
+
+	<!-- Left panel : Navigation area -->
+	<!-- Note: This width of the aside area can be adjusted through LESS variables -->
+	<aside id="left-panel">
+		<nav>
+			<ul>
+				<li><a href="#" title="Dashboard"><i
+						class="fa fa-lg fa-fw fa-home"></i> <span class="menu-item-parent">Dashboard</span></a>
+					<ul>
+						<li><a href="index.html" title="Dashboard"><span
+								class="menu-item-parent">Analytics Dashboard</span></a></li>
+						<li class=""><a href="dashboard-social.html"
+							title="Dashboard"><span class="menu-item-parent">Social
+									Wall</span></a></li>
+					</ul></li>
+
+			</ul>
+		</nav>
+	</aside>
+	<!-- END NAVIGATION -->
+
+	<!-- MAIN PANEL -->
+	<div id="main" role="main">
+
+		<!-- RIBBON -->
+		<div id="ribbon">
+			<span class="ribbon-button-alignment"> <span id="refresh"
+				class="btn btn-ribbon" data-action="resetWidgets"
+				data-title="refresh" rel="tooltip" data-placement="bottom"
+				data-original-title="<i class='text-warning fa fa-warning'></i> Warning! This will reset all your widget settings."
+				data-html="true"> <i class="fa fa-refresh"></i>
+			</span>
+			</span>
+
+			<!-- breadcrumb -->
+			<ol class="breadcrumb">
+				<li>Dashboard</li>
+			</ol>
+			<!-- end breadcrumb -->
+
+			<!-- You can also add more buttons to the
+				ribbon for further usability
+
+				Example below:
+
+				<span class="ribbon-button-alignment pull-right">
+				<span id="search" class="btn btn-ribbon hidden-xs" data-title="search"><i class="fa-grid"></i> Change Grid</span>
+				<span id="add" class="btn btn-ribbon hidden-xs" data-title="add"><i class="fa-plus"></i> Add</span>
+				<span id="search" class="btn btn-ribbon" data-title="search"><i class="fa-search"></i> <span class="hidden-mobile">Search</span></span>
+				</span> -->
+
+		</div>
+		<!-- END RIBBON -->
+
+		<!-- MAIN CONTENT -->
+		<div id="content">
+
+			<!-- row -->
+			<div class="row">
+
+				<!-- col -->
+				<div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
+					<h1 class="page-title txt-color-blueDark">
+						<!-- PAGE HEADER -->
+						<i class="fa-fw fa fa-home"></i> Dashboard
+					</h1>
+				</div>
+				<!-- end col -->
+			</div>
+			<!-- end col -->
+		</div>
+		<!-- end row -->
+		<!--
+				The ID "widget-grid" will start to initialize all widgets below
+				You do not need to use widgets if you dont want to. Simply remove
+				the <section></section> and you can use wells or panels instead
+				-->
+		<!-- widget grid -->
+		<section id="widget-grid" class="">
+			<!-- row -->
+			<div class="row">
+				<!-- NEW WIDGET START -->
+				<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+					<table id="jqgrid"></table>
+					<div id="pjqgrid"></div>
+					<br> <a href="javascript:void(0)" id="m1">Get Selected
+						id's</a> <br> <a href="javascript:void(0)" id="m1s">Select(Unselect)
+						row 13</a>
+				</article>
+				<!-- WIDGET END -->
+
+			</div>
+
+			<!-- end row -->
+
+		</section>
+		<!-- end widget grid -->
+
+	</div>
+	<!-- END MAIN CONTENT -->
+
+	</div>
+	<!-- END MAIN PANEL -->
+
+	<!-- PAGE FOOTER -->
+	<div class="page-footer">
+		<div class="row">
+			<div class="col-xs-12 col-sm-6 text-right">
+				<span class="txt-color-white">Jira SVN migration 1.0 </span>
+			</div>
+
+		</div>
+	</div>
+	<!-- END PAGE FOOTER -->
+
+	<!-- PACE LOADER - turn this on if you want ajax loading to show (caution: uses lots of memory on iDevices)-->
+	<script data-pace-options='{ "restartOnRequestAfter": true }'
+		src="resources/js/plugin/pace/pace.min.js"></script>
+
+	<!-- Link to Google CDN's jQuery + jQueryUI; fall back to local -->
+	<script
+		src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script>
+		if (!window.jQuery) {
+			document
+					.write('<script src="js/libs/jquery-2.1.1.min.js"><\/script>');
+		}
+	</script>
+
+	<script
+		src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+	<script>
+		if (!window.jQuery.ui) {
+			document
+					.write('<script src="js/libs/jquery-ui-1.10.3.min.js"><\/script>');
+		}
+	</script>
+
+	<!-- BOOTSTRAP JS -->
+	<script src="resources/js/bootstrap/bootstrap.min.js"></script>
+
+	<!-- JQUERY VALIDATE -->
+	<script
+		src="resources/js/plugin/jquery-validate/jquery.validate.min.js"></script>
+
+	<!-- JQUERY SELECT2 INPUT -->
+	<script src="resources/js/plugin/select2/select2.min.js"></script>
+
+	<!-- browser msie issue fix -->
+	<script src="resources/js/plugin/msie-fix/jquery.mb.browser.min.js"></script>
+
+	<!--[if IE 8]>
+
+		<h1>Your browser is out of date, please update your browser by going to www.microsoft.com/download</h1>
+
+		<![endif]-->
+
+	<script src="resources/js/plugin/jqgrid/jquery.jqGrid.min.js"></script>
+	<script src="resources/js/plugin/jqgrid/grid.locale-en.min.js"></script>
+
+	<script type="text/javascript">
+		$(document)
+				.ready(
+						function() {
+							//pageSetUp();
+
+							var jqgrid_data = [ {
+								id : "1",
+								date : "2007-10-01",
+								name : "test",
+								note : "note",
+								amount : "200.00",
+								tax : "10.00",
+								total : "210.00"
+							}, {
+								id : "2",
+								date : "2007-10-02",
+								name : "test2",
+								note : "note2",
+								amount : "300.00",
+								tax : "20.00",
+								total : "320.00"
+							}, {
+								id : "3",
+								date : "2007-09-01",
+								name : "test3",
+								note : "note3",
+								amount : "400.00",
+								tax : "30.00",
+								total : "430.00"
+							}, {
+								id : "4",
+								date : "2007-10-04",
+								name : "test",
+								note : "note",
+								amount : "200.00",
+								tax : "10.00",
+								total : "210.00"
+							}, {
+								id : "5",
+								date : "2007-10-05",
+								name : "test2",
+								note : "note2",
+								amount : "300.00",
+								tax : "20.00",
+								total : "320.00"
+							}, {
+								id : "6",
+								date : "2007-09-06",
+								name : "test3",
+								note : "note3",
+								amount : "400.00",
+								tax : "30.00",
+								total : "430.00"
+							}, {
+								id : "7",
+								date : "2007-10-04",
+								name : "test",
+								note : "note",
+								amount : "200.00",
+								tax : "10.00",
+								total : "210.00"
+							}, {
+								id : "8",
+								date : "2007-10-03",
+								name : "test2",
+								note : "note2",
+								amount : "300.00",
+								tax : "20.00",
+								total : "320.00"
+							}, {
+								id : "9",
+								date : "2007-09-01",
+								name : "test3",
+								note : "note3",
+								amount : "400.00",
+								tax : "30.00",
+								total : "430.00"
+							}, {
+								id : "10",
+								date : "2007-10-01",
+								name : "test",
+								note : "note",
+								amount : "200.00",
+								tax : "10.00",
+								total : "210.00"
+							}, {
+								id : "11",
+								date : "2007-10-02",
+								name : "test2",
+								note : "note2",
+								amount : "300.00",
+								tax : "20.00",
+								total : "320.00"
+							}, {
+								id : "12",
+								date : "2007-09-01",
+								name : "test3",
+								note : "note3",
+								amount : "400.00",
+								tax : "30.00",
+								total : "430.00"
+							}, {
+								id : "13",
+								date : "2007-10-04",
+								name : "test",
+								note : "note",
+								amount : "200.00",
+								tax : "10.00",
+								total : "210.00"
+							}, {
+								id : "14",
+								date : "2007-10-05",
+								name : "test2",
+								note : "note2",
+								amount : "300.00",
+								tax : "20.00",
+								total : "320.00"
+							}, {
+								id : "15",
+								date : "2007-09-06",
+								name : "test3",
+								note : "note3",
+								amount : "400.00",
+								tax : "30.00",
+								total : "430.00"
+							}, {
+								id : "16",
+								date : "2007-10-04",
+								name : "test",
+								note : "note",
+								amount : "200.00",
+								tax : "10.00",
+								total : "210.00"
+							}, {
+								id : "17",
+								date : "2007-10-03",
+								name : "test2",
+								note : "note2",
+								amount : "300.00",
+								tax : "20.00",
+								total : "320.00"
+							}, {
+								id : "18",
+								date : "2007-09-01",
+								name : "test3",
+								note : "note3",
+								amount : "400.00",
+								tax : "30.00",
+								total : "430.00"
+							} ];
+
+							jQuery("#jqgrid")
+									.jqGrid(
+											{
+												data : jqgrid_data,
+												datatype : "local",
+												height : 'auto',
+												colNames : [ 'Actions',
+														'Inv No', 'Date',
+														'Client', 'Amount',
+														'Tax', 'Total', 'Notes' ],
+												colModel : [ {
+													name : 'act',
+													index : 'act',
+													sortable : false
+												}, {
+													name : 'id',
+													index : 'id'
+												}, {
+													name : 'date',
+													index : 'date',
+													editable : true
+												}, {
+													name : 'name',
+													index : 'name',
+													editable : true
+												}, {
+													name : 'amount',
+													index : 'amount',
+													align : "right",
+													editable : true
+												}, {
+													name : 'tax',
+													index : 'tax',
+													align : "right",
+													editable : true
+												}, {
+													name : 'total',
+													index : 'total',
+													align : "right",
+													editable : true
+												}, {
+													name : 'note',
+													index : 'note',
+													sortable : false,
+													editable : true
+												} ],
+												rowNum : 10,
+												rowList : [ 10, 20, 30 ],
+												pager : '#pjqgrid',
+												sortname : 'id',
+												toolbarfilter : true,
+												viewrecords : true,
+												sortorder : "asc",
+												gridComplete : function() {
+													var ids = jQuery("#jqgrid")
+															.jqGrid(
+																	'getDataIDs');
+													for (var i = 0; i < ids.length; i++) {
+														var cl = ids[i];
+														be = "<button class='btn btn-xs btn-default' data-original-title='Edit Row' onclick=\"jQuery('#jqgrid').editRow('"
+																+ cl
+																+ "');\"><i class='fa fa-pencil'></i></button>";
+														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"jQuery('#jqgrid').saveRow('"
+																+ cl
+																+ "');\"><i class='fa fa-save'></i></button>";
+														ca = "<button class='btn btn-xs btn-default' data-original-title='Cancel' onclick=\"jQuery('#jqgrid').restoreRow('"
+																+ cl
+																+ "');\"><i class='fa fa-times'></i></button>";
+														//ce = "<button class='btn btn-xs btn-default' onclick=\"jQuery('#jqgrid').restoreRow('"+cl+"');\"><i class='fa fa-times'></i></button>";
+														//jQuery("#jqgrid").jqGrid('setRowData',ids[i],{act:be+se+ce});
+														jQuery("#jqgrid")
+																.jqGrid(
+																		'setRowData',
+																		ids[i],
+																		{
+																			act : be
+																					+ se
+																					+ ca
+																		});
+													}
+												},
+												editurl : "dummy.html",
+												caption : "SmartAdmin jQgrid Skin",
+												multiselect : true,
+												autowidth : true,
+
+											});
+							jQuery("#jqgrid").jqGrid('navGrid', "#pjqgrid", {
+								edit : false,
+								add : false,
+								del : true
+							});
+							jQuery("#jqgrid").jqGrid('inlineNav', "#pjqgrid");
+							/* Add tooltips */
+							$('.navtable .ui-pg-button').tooltip({
+								container : 'body'
+							});
+
+							jQuery("#m1").click(
+									function() {
+										var s;
+										s = jQuery("#jqgrid").jqGrid(
+												'getGridParam', 'selarrrow');
+										alert(s);
+									});
+							jQuery("#m1s").click(function() {
+								jQuery("#jqgrid").jqGrid('setSelection', "13");
+							});
+
+							// remove classes
+							$(".ui-jqgrid").removeClass(
+									"ui-widget ui-widget-content");
+							$(".ui-jqgrid-view").children().removeClass(
+									"ui-widget-header ui-state-default");
+							$(".ui-jqgrid-labels, .ui-search-toolbar")
+									.children()
+									.removeClass(
+											"ui-state-default ui-th-column ui-th-ltr");
+							$(".ui-jqgrid-pager").removeClass(
+									"ui-state-default");
+							$(".ui-jqgrid").removeClass("ui-widget-content");
+
+							// add classes
+							$(".ui-jqgrid-htable").addClass(
+									"table table-bordered table-hover");
+							$(".ui-jqgrid-btable").addClass(
+									"table table-bordered table-striped");
+
+							$(".ui-pg-div").removeClass().addClass(
+									"btn btn-sm btn-primary");
+							$(".ui-icon.ui-icon-plus").removeClass().addClass(
+									"fa fa-plus");
+							$(".ui-icon.ui-icon-pencil").removeClass()
+									.addClass("fa fa-pencil");
+							$(".ui-icon.ui-icon-trash").removeClass().addClass(
+									"fa fa-trash-o");
+							$(".ui-icon.ui-icon-search").removeClass()
+									.addClass("fa fa-search");
+							$(".ui-icon.ui-icon-refresh").removeClass()
+									.addClass("fa fa-refresh");
+							$(".ui-icon.ui-icon-disk").removeClass().addClass(
+									"fa fa-save").parent(".btn-primary")
+									.removeClass("btn-primary").addClass(
+											"btn-success");
+							$(".ui-icon.ui-icon-cancel").removeClass()
+									.addClass("fa fa-times").parent(
+											".btn-primary").removeClass(
+											"btn-primary").addClass(
+											"btn-danger");
+
+							$(".ui-icon.ui-icon-seek-prev")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-prev").removeClass()
+									.addClass("fa fa-backward");
+
+							$(".ui-icon.ui-icon-seek-first")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-first").removeClass()
+									.addClass("fa fa-fast-backward");
+
+							$(".ui-icon.ui-icon-seek-next")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-next").removeClass()
+									.addClass("fa fa-forward");
+
+							$(".ui-icon.ui-icon-seek-end")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-end").removeClass()
+									.addClass("fa fa-fast-forward");
+
+						})
+
+		$(window).on('resize.jqGrid', function() {
+			$("#jqgrid").jqGrid('setGridWidth', $("#content").width());
+		})
+	</script>
+
+</body>
+
+</html>
