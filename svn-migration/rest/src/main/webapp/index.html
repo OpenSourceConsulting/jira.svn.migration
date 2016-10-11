@@ -38,51 +38,6 @@
 	href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,300,400,700">
 </head>
 
-
-<!--
-
-	TABLE OF CONTENTS.
-	
-	Use search to find needed section.
-	
-	===================================================================
-	
-	|  01. #CSS Links                |  all CSS links and file paths  |
-	|  02. #FAVICONS                 |  Favicon links and file paths  |
-	|  03. #GOOGLE FONT              |  Google font link              |
-	|  04. #APP SCREEN / ICONS       |  app icons, screen backdrops   |
-	|  05. #BODY                     |  body tag                      |
-	|  06. #HEADER                   |  header tag                    |
-	|  07. #PROJECTS                 |  project lists                 |
-	|  08. #TOGGLE LAYOUT BUTTONS    |  layout buttons and actions    |
-	|  09. #MOBILE                   |  mobile view dropdown          |
-	|  10. #SEARCH                   |  search field                  |
-	|  11. #NAVIGATION               |  left panel & navigation       |
-	|  12. #RIGHT PANEL              |  right panel userlist          |
-	|  13. #MAIN PANEL               |  main panel                    |
-	|  14. #MAIN CONTENT             |  content holder                |
-	|  15. #PAGE FOOTER              |  page footer                   |
-	|  16. #SHORTCUT AREA            |  dropdown shortcuts area       |
-	|  17. #PLUGINS                  |  all scripts and plugins       |
-	
-	===================================================================
-	
-	-->
-
-<!-- #BODY -->
-<!-- Possible Classes
-
-		* 'smart-style-{SKIN#}'
-		* 'smart-rtl'         - Switch theme mode to RTL
-		* 'menu-on-top'       - Switch to top navigation (no DOM change required)
-		* 'no-menu'			  - Hides the menu completely
-		* 'hidden-menu'       - Hides the main menu but still accessable by hovering over left edge
-		* 'fixed-header'      - Fixes the header
-		* 'fixed-navigation'  - Fixes the main menu
-		* 'fixed-ribbon'      - Fixes breadcrumb
-		* 'fixed-page-footer' - Fixes footer
-		* 'container'         - boxed layout mode (non-responsive: will not work with fixed-navigation & fixed-ribbon)
-	-->
 <body class="">
 
 	<!-- HEADER -->
@@ -136,18 +91,6 @@
 				<li>Dashboard</li>
 			</ol>
 			<!-- end breadcrumb -->
-
-			<!-- You can also add more buttons to the
-				ribbon for further usability
-
-				Example below:
-
-				<span class="ribbon-button-alignment pull-right">
-				<span id="search" class="btn btn-ribbon hidden-xs" data-title="search"><i class="fa-grid"></i> Change Grid</span>
-				<span id="add" class="btn btn-ribbon hidden-xs" data-title="add"><i class="fa-plus"></i> Add</span>
-				<span id="search" class="btn btn-ribbon" data-title="search"><i class="fa-search"></i> <span class="hidden-mobile">Search</span></span>
-				</span> -->
-
 		</div>
 		<!-- END RIBBON -->
 
@@ -156,7 +99,6 @@
 
 			<!-- row -->
 			<div class="row">
-
 				<!-- col -->
 				<div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
 					<h1 class="page-title txt-color-blueDark">
@@ -167,36 +109,66 @@
 				<!-- end col -->
 			</div>
 			<!-- end col -->
+			<!-- widget grid -->
+			<section id="widget-grid" class="">
+
+				<!-- row -->
+				<div class="row">
+					<article class="col-md-offset-2 col-md-8 col-lg-8">
+						<div class="jarviswidget" id="wid-id-0"
+							data-widget-colorbutton="false" data-widget-editbutton="false"
+							data-widget-custombutton="false">
+							<div>
+								<div class="widget-body">
+									<form class="smart-form">
+										<fieldset>
+											<div class="row">
+												<section class="col col-4">
+													<label class="label">Project</label> <label class="select">
+														<select id="projectList"></select> <i></i>
+													</label>
+												</section>
+												<section class="col col-3">
+													<label class="label">From</label> <label class="input">
+														<i class="icon-append fa fa-calendar"></i> <input
+														type="text" name="fromdate" id="fromdate"
+														placeholder="From">
+													</label>
+												</section>
+												<section class="col col-3">
+													<label class="label">To</label> <label class="input">
+														<i class="icon-append fa fa-calendar"></i> <input
+														type="text" name="todate" id="todate" placeholder="To">
+													</label>
+												</section>
+											</div>
+										</fieldset>
+										<footer>
+											<button id="btnIssueFilter" class="btn btn-primary">Filter</button>
+										</footer>
+									</form>
+								</div>
+							</div>
+						</div>
+					</article>
+					<!-- NEW WIDGET START -->
+					<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+						<table id="issueList"></table>
+						<div id="pjqgrid"></div>
+						<br> <a href="javascript:void(0)" id="m1">Get Selected
+							id's</a> <br> <a href="javascript:void(0)" id="m1s">Select(Unselect)
+							row 13</a>
+					</article>
+					<!-- WIDGET END -->
+
+				</div>
+
+				<!-- end row -->
+
+			</section>
+			<!-- end widget grid -->
 		</div>
-		<!-- end row -->
-		<!--
-				The ID "widget-grid" will start to initialize all widgets below
-				You do not need to use widgets if you dont want to. Simply remove
-				the <section></section> and you can use wells or panels instead
-				-->
-		<!-- widget grid -->
-		<section id="widget-grid" class="">
-			<!-- row -->
-			<div class="row">
-				<!-- NEW WIDGET START -->
-				<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-					<table id="jqgrid"></table>
-					<div id="pjqgrid"></div>
-					<br> <a href="javascript:void(0)" id="m1">Get Selected
-						id's</a> <br> <a href="javascript:void(0)" id="m1s">Select(Unselect)
-						row 13</a>
-				</article>
-				<!-- WIDGET END -->
-
-			</div>
-
-			<!-- end row -->
-
-		</section>
-		<!-- end widget grid -->
-
-	</div>
-	<!-- END MAIN CONTENT -->
+		<!-- main content -->
 
 	</div>
 	<!-- END MAIN PANEL -->
@@ -237,7 +209,8 @@
 
 	<!-- BOOTSTRAP JS -->
 	<script src="resources/js/bootstrap/bootstrap.min.js"></script>
-
+	<!-- JARVIS WIDGETS -->
+	<script src="resources/js/smartwidgets/jarvis.widget.min.js"></script>
 	<!-- JQUERY VALIDATE -->
 	<script
 		src="resources/js/plugin/jquery-validate/jquery.validate.min.js"></script>
@@ -247,7 +220,8 @@
 
 	<!-- browser msie issue fix -->
 	<script src="resources/js/plugin/msie-fix/jquery.mb.browser.min.js"></script>
-
+	<!-- PAGE RELATED PLUGIN(S) -->
+	<script src="resources/js/plugin/jquery-form/jquery-form.min.js"></script>
 	<!--[if IE 8]>
 
 		<h1>Your browser is out of date, please update your browser by going to www.microsoft.com/download</h1>
@@ -256,252 +230,134 @@
 
 	<script src="resources/js/plugin/jqgrid/jquery.jqGrid.min.js"></script>
 	<script src="resources/js/plugin/jqgrid/grid.locale-en.min.js"></script>
+	<script src="resources/js/jira.svn.js"></script>
 
 	<script type="text/javascript">
 		$(document)
 				.ready(
 						function() {
-							//pageSetUp();
+							getProjectList("projectList");
+							// START AND FINISH DATE
+							$('#fromdate')
+									.datepicker(
+											{
+												dateFormat : 'yy/mm/dd',
+												prevText : '<i class="fa fa-chevron-left"></i>',
+												nextText : '<i class="fa fa-chevron-right"></i>',
+												onSelect : function(
+														selectedDate) {
+													$('#todate').datepicker(
+															'option',
+															'minDate',
+															selectedDate);
+												}
+											});
 
-							var jqgrid_data = [ {
-								id : "1",
-								date : "2007-10-01",
-								name : "test",
-								note : "note",
-								amount : "200.00",
-								tax : "10.00",
-								total : "210.00"
-							}, {
-								id : "2",
-								date : "2007-10-02",
-								name : "test2",
-								note : "note2",
-								amount : "300.00",
-								tax : "20.00",
-								total : "320.00"
-							}, {
-								id : "3",
-								date : "2007-09-01",
-								name : "test3",
-								note : "note3",
-								amount : "400.00",
-								tax : "30.00",
-								total : "430.00"
-							}, {
-								id : "4",
-								date : "2007-10-04",
-								name : "test",
-								note : "note",
-								amount : "200.00",
-								tax : "10.00",
-								total : "210.00"
-							}, {
-								id : "5",
-								date : "2007-10-05",
-								name : "test2",
-								note : "note2",
-								amount : "300.00",
-								tax : "20.00",
-								total : "320.00"
-							}, {
-								id : "6",
-								date : "2007-09-06",
-								name : "test3",
-								note : "note3",
-								amount : "400.00",
-								tax : "30.00",
-								total : "430.00"
-							}, {
-								id : "7",
-								date : "2007-10-04",
-								name : "test",
-								note : "note",
-								amount : "200.00",
-								tax : "10.00",
-								total : "210.00"
-							}, {
-								id : "8",
-								date : "2007-10-03",
-								name : "test2",
-								note : "note2",
-								amount : "300.00",
-								tax : "20.00",
-								total : "320.00"
-							}, {
-								id : "9",
-								date : "2007-09-01",
-								name : "test3",
-								note : "note3",
-								amount : "400.00",
-								tax : "30.00",
-								total : "430.00"
-							}, {
-								id : "10",
-								date : "2007-10-01",
-								name : "test",
-								note : "note",
-								amount : "200.00",
-								tax : "10.00",
-								total : "210.00"
-							}, {
-								id : "11",
-								date : "2007-10-02",
-								name : "test2",
-								note : "note2",
-								amount : "300.00",
-								tax : "20.00",
-								total : "320.00"
-							}, {
-								id : "12",
-								date : "2007-09-01",
-								name : "test3",
-								note : "note3",
-								amount : "400.00",
-								tax : "30.00",
-								total : "430.00"
-							}, {
-								id : "13",
-								date : "2007-10-04",
-								name : "test",
-								note : "note",
-								amount : "200.00",
-								tax : "10.00",
-								total : "210.00"
-							}, {
-								id : "14",
-								date : "2007-10-05",
-								name : "test2",
-								note : "note2",
-								amount : "300.00",
-								tax : "20.00",
-								total : "320.00"
-							}, {
-								id : "15",
-								date : "2007-09-06",
-								name : "test3",
-								note : "note3",
-								amount : "400.00",
-								tax : "30.00",
-								total : "430.00"
-							}, {
-								id : "16",
-								date : "2007-10-04",
-								name : "test",
-								note : "note",
-								amount : "200.00",
-								tax : "10.00",
-								total : "210.00"
-							}, {
-								id : "17",
-								date : "2007-10-03",
-								name : "test2",
-								note : "note2",
-								amount : "300.00",
-								tax : "20.00",
-								total : "320.00"
-							}, {
-								id : "18",
-								date : "2007-09-01",
-								name : "test3",
-								note : "note3",
-								amount : "400.00",
-								tax : "30.00",
-								total : "430.00"
-							} ];
+							$('#todate')
+									.datepicker(
+											{
+												dateFormat : 'yy/mm/dd',
+												prevText : '<i class="fa fa-chevron-left"></i>',
+												nextText : '<i class="fa fa-chevron-right"></i>',
+												onSelect : function(
+														selectedDate) {
+													$('#fromdate').datepicker(
+															'option',
+															'maxDate',
+															selectedDate);
+												}
+											});
 
-							jQuery("#jqgrid")
+							jQuery("#issueList")
 									.jqGrid(
 											{
-												data : jqgrid_data,
+												shrinkToFit : true,
 												datatype : "local",
 												height : 'auto',
-												colNames : [ 'Actions',
-														'Inv No', 'Date',
-														'Client', 'Amount',
-														'Tax', 'Total', 'Notes' ],
+												colNames : [ 'ID', 'Key',
+														'Summary',
+														'Created Date',
+														'Last Updated',
+														'Status', 'Action' ],
 												colModel : [ {
+													name : 'id',
+													index : 'id',
+													width:50
+												}, {
+													name : 'key',
+													index : 'key',
+													width:50
+												}, {
+													name : 'summary',
+													index : 'summary',
+												}, {
+													name : 'created',
+													index : 'created',
+													width:75
+												}, {
+													name : 'last_updated',
+													index : 'last_updated',
+													width:75
+												}, {
+													name : 'status',
+													index : 'status',
+													width:50
+												}, {
 													name : 'act',
 													index : 'act',
-													sortable : false
-												}, {
-													name : 'id',
-													index : 'id'
-												}, {
-													name : 'date',
-													index : 'date',
-													editable : true
-												}, {
-													name : 'name',
-													index : 'name',
-													editable : true
-												}, {
-													name : 'amount',
-													index : 'amount',
-													align : "right",
-													editable : true
-												}, {
-													name : 'tax',
-													index : 'tax',
-													align : "right",
-													editable : true
-												}, {
-													name : 'total',
-													index : 'total',
-													align : "right",
-													editable : true
-												}, {
-													name : 'note',
-													index : 'note',
 													sortable : false,
-													editable : true
+													width:50
 												} ],
 												rowNum : 10,
-												rowList : [ 10, 20, 30 ],
 												pager : '#pjqgrid',
 												sortname : 'id',
 												toolbarfilter : true,
 												viewrecords : true,
 												sortorder : "asc",
 												gridComplete : function() {
-													var ids = jQuery("#jqgrid")
+													var ids = jQuery(
+															"#issueList")
 															.jqGrid(
 																	'getDataIDs');
 													for (var i = 0; i < ids.length; i++) {
 														var cl = ids[i];
-														be = "<button class='btn btn-xs btn-default' data-original-title='Edit Row' onclick=\"jQuery('#jqgrid').editRow('"
-																+ cl
-																+ "');\"><i class='fa fa-pencil'></i></button>";
-														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"jQuery('#jqgrid').saveRow('"
+														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"jQuery('#issueList').saveRow('"
 																+ cl
 																+ "');\"><i class='fa fa-save'></i></button>";
-														ca = "<button class='btn btn-xs btn-default' data-original-title='Cancel' onclick=\"jQuery('#jqgrid').restoreRow('"
+														ca = "<button class='btn btn-xs btn-default' data-original-title='Cancel' onclick=\"jQuery('#issueList').restoreRow('"
 																+ cl
 																+ "');\"><i class='fa fa-times'></i></button>";
-														//ce = "<button class='btn btn-xs btn-default' onclick=\"jQuery('#jqgrid').restoreRow('"+cl+"');\"><i class='fa fa-times'></i></button>";
-														//jQuery("#jqgrid").jqGrid('setRowData',ids[i],{act:be+se+ce});
-														jQuery("#jqgrid")
+														jQuery("#issueList")
 																.jqGrid(
 																		'setRowData',
 																		ids[i],
 																		{
-																			act : be
-																					+ se
+																			act : se
 																					+ ca
 																		});
 													}
 												},
 												editurl : "dummy.html",
-												caption : "SmartAdmin jQgrid Skin",
+												caption : "Jira issues",
 												multiselect : true,
 												autowidth : true,
 
 											});
-							jQuery("#jqgrid").jqGrid('navGrid', "#pjqgrid", {
-								edit : false,
-								add : false,
-								del : true
-							});
-							jQuery("#jqgrid").jqGrid('inlineNav', "#pjqgrid");
+
+							jQuery("#issueList").jqGrid('navGrid', "#pjqgrid",
+									{
+										add : true,
+										edit : false,
+										del : false,
+										search : false,
+										refresh : false
+									});
+
+							jQuery("#issueList").jqGrid('inlineNav',
+									"#pjqgrid", {
+										add : false,
+										edit : false
+									});
 							/* Add tooltips */
 							$('.navtable .ui-pg-button').tooltip({
 								container : 'body'
@@ -510,13 +366,15 @@
 							jQuery("#m1").click(
 									function() {
 										var s;
-										s = jQuery("#jqgrid").jqGrid(
+										s = jQuery("#issueList").jqGrid(
 												'getGridParam', 'selarrrow');
 										alert(s);
 									});
-							jQuery("#m1s").click(function() {
-								jQuery("#jqgrid").jqGrid('setSelection', "13");
-							});
+							jQuery("#m1s").click(
+									function() {
+										jQuery("#issueList").jqGrid(
+												'setSelection', "13");
+									});
 
 							// remove classes
 							$(".ui-jqgrid").removeClass(
@@ -541,10 +399,7 @@
 									"btn btn-sm btn-primary");
 							$(".ui-icon.ui-icon-plus").removeClass().addClass(
 									"fa fa-plus");
-							$(".ui-icon.ui-icon-pencil").removeClass()
-									.addClass("fa fa-pencil");
-							$(".ui-icon.ui-icon-trash").removeClass().addClass(
-									"fa fa-trash-o");
+
 							$(".ui-icon.ui-icon-search").removeClass()
 									.addClass("fa fa-search");
 							$(".ui-icon.ui-icon-refresh").removeClass()
@@ -582,14 +437,28 @@
 											"<div class='btn btn-sm btn-default'></div>");
 							$(".ui-icon.ui-icon-seek-end").removeClass()
 									.addClass("fa fa-fast-forward");
-
-						})
+							//filter click
+							$("#btnIssueFilter")
+									.click(
+											function(e) {
+												var projectId = $(
+														"#projectList").val();
+												var fromDate = $("#fromdate")
+														.val();
+												var toDate = $("#todate").val();
+												var fields = "id,key,summary,created,updated,status";
+												filterIssues("issueList",
+														projectId, fromDate,
+														toDate, fields);
+												e.preventDefault();
+											});
+						});
 
 		$(window).on('resize.jqGrid', function() {
-			$("#jqgrid").jqGrid('setGridWidth', $("#content").width());
+			$("#issueList").jqGrid('setGridWidth', $("#content").width());
 		})
 	</script>
-
+	<div id="message" title="Warning"></div>
 </body>
 
 </html>
