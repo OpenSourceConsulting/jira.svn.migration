@@ -156,8 +156,7 @@
 						<table id="issueList"></table>
 						<div id="pjqgrid"></div>
 						<br> <a href="javascript:void(0)" id="m1">Get Selected
-							id's</a> <br> <a href="javascript:void(0)" id="m1s">Select(Unselect)
-							row 13</a>
+							id's</a>
 					</article>
 					<!-- WIDGET END -->
 
@@ -268,85 +267,54 @@
 												}
 											});
 
-							jQuery("#issueList")
-									.jqGrid(
-											{
-												shrinkToFit : true,
-												datatype : "local",
-												height : 'auto',
-												colNames : [ 'ID', 'Key',
-														'Summary',
-														'Created Date',
-														'Last Updated',
-														'Status', 'Action' ],
-												colModel : [ {
-													name : 'id',
-													index : 'id',
-													width:50
-												}, {
-													name : 'key',
-													index : 'key',
-													width:50
-												}, {
-													name : 'summary',
-													index : 'summary',
-												}, {
-													name : 'created',
-													index : 'created',
-													width:75
-												}, {
-													name : 'last_updated',
-													index : 'last_updated',
-													width:75
-												}, {
-													name : 'status',
-													index : 'status',
-													width:50
-												}, {
-													name : 'act',
-													index : 'act',
-													sortable : false,
-													width:50
-												} ],
-												rowNum : 10,
-												pager : '#pjqgrid',
-												sortname : 'id',
-												toolbarfilter : true,
-												viewrecords : true,
-												sortorder : "asc",
-												gridComplete : function() {
-													var ids = jQuery(
-															"#issueList")
-															.jqGrid(
-																	'getDataIDs');
-													for (var i = 0; i < ids.length; i++) {
-														var cl = ids[i];
-														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"jQuery('#issueList').saveRow('"
-																+ cl
-																+ "');\"><i class='fa fa-save'></i></button>";
-														ca = "<button class='btn btn-xs btn-default' data-original-title='Cancel' onclick=\"jQuery('#issueList').restoreRow('"
-																+ cl
-																+ "');\"><i class='fa fa-times'></i></button>";
-														jQuery("#issueList")
-																.jqGrid(
-																		'setRowData',
-																		ids[i],
-																		{
-																			act : se
-																					+ ca
-																		});
-													}
-												},
-												editurl : "dummy.html",
-												caption : "Jira issues",
-												multiselect : true,
-												autowidth : true,
+							jQuery("#issueList").jqGrid(
+									{
+										shrinkToFit : true,
+										datatype : "local",
+										height : 'auto',
+										colNames : [ 'ID', 'Key', 'Summary',
+												'Created Date', 'Last Updated',
+												'Status' ],
+										colModel : [ {
+											name : 'id',
+											index : 'id',
+											width : 50
+										}, {
+											name : 'key',
+											index : 'key',
+											width : 50
+										}, {
+											name : 'summary',
+											index : 'summary',
+										}, {
+											name : 'created',
+											index : 'created',
+											width : 75
+										}, {
+											name : 'last_updated',
+											index : 'last_updated',
+											width : 75
+										}, {
+											name : 'status',
+											index : 'status',
+											width : 50
+										} ],
+										rowNum : 10,
+										pager : '#pjqgrid',
+										sortname : 'id',
+										toolbarfilter : true,
+										viewrecords : true,
+										sortorder : "asc",
+										editurl : "dummy.html",
+										caption : "Jira issues",
+										multiselect : true,
+										autowidth : true,
 
-											});
+									});
 
 							jQuery("#issueList").jqGrid('navGrid', "#pjqgrid",
 									{
-										add : true,
+										add : false,
 										edit : false,
 										del : false,
 										search : false,
