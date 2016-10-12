@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="com.athena" level="DEBUG"/>
+
+	<logger name="org.springframework" level="ERROR"/>
+	<logger name="org.springframework.web" level="DEBUG"/>
+	<logger name="org.springframework.web.websocket" level="DEBUG"/>
+	<logger name="org.springframework.web.context.support.StandardServletEnvironment" level="INFO"/>
+	<logger name="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping" level="INFO"/>
+	<logger name="org.springframework.security" level="DEBUG"/>
+
+	<logger name="org.hibernate" level="ERROR" />
+	<logger name="org.hibernate.SQL" level="DEBUG" /> <!-- sql log -->
+	<logger name="org.hibernate.type" level="WARN" /> <!-- parameters & result -->
+    <logger name="org.hibernate.type.CollectionType" level="TRACE" /> <!-- parameters & result -->
+    <logger name="org.hibernate.type.BasicTypeRegistry" level="WARN" />
+	<logger name="org.hibernate.engine.transaction" level="DEBUG" />
+	<logger name="org.hibernate.internal.util.EntityPrinter" level="DEBUG" />
+	
+	<logger name="org.apache.tomcat.jdbc.pool" level="DEBUG" />
+
+	<!-- 
+	<logger name="java.sql.Connection" level="DEBUG" />
+	<logger name="java.sql.PreparedStatement" level="DEBUG" />
+	<logger name="java.sql.ResultSet" level="DEBUG" />
+	 -->
+	
+
+	<root level="ERROR">
+	    <appender-ref ref="CONSOLE" />
+	</root>
+</configuration>

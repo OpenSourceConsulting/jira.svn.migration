@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<title>SmartAdmin</title>
+<meta name="description" content="">
+<meta name="author" content="">
+
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- #CSS Links -->
+<!-- Basic Styles -->
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/font-awesome.min.css">
+
+<!-- SmartAdmin Styles : Caution! DO NOT change the order -->
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-production-plugins.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-production.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-skins.min.css">
+
+<!-- We recommend you use "your_style.css" to override SmartAdmin
+		specific styles this will also ensure you retrain your customization with each SmartAdmin update.
+		<link rel="stylesheet" type="text/css" media="screen" href="css/your_style.css"> -->
+
+<!-- #FAVICONS -->
+<link rel="shortcut icon" href="resources/img/favicon.png"
+	type="image/x-icon">
+<link rel="icon" href="resources/img/favicon.png" type="image/x-icon">
+
+<!-- #GOOGLE FONT -->
+<link rel="stylesheet"
+	href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,300,400,700">
+</head>
+
+<body class="">
+
+	<!-- HEADER -->
+	<header id="header">
+		<div id="logo-group">
+			<!-- PLACE YOUR LOGO HERE -->
+			<span id="logo"> <img src="resources/img/osc-logo.png"
+				alt="SmartAdmin">
+			</span>
+			<!-- END LOGO PLACEHOLDER -->
+		</div>
+
+	</header>
+	<!-- END HEADER -->
+
+	<!-- Left panel : Navigation area -->
+	<!-- Note: This width of the aside area can be adjusted through LESS variables -->
+	<aside id="left-panel">
+		<nav>
+			<ul>
+				<li><a href="#" title="Dashboard"><i
+						class="fa fa-lg fa-fw fa-home"></i> <span class="menu-item-parent">Dashboard</span></a>
+					<ul>
+						<li><a href="index.html" title="Dashboard"><span
+								class="menu-item-parent">Analytics Dashboard</span></a></li>
+						<li class=""><a href="dashboard-social.html"
+							title="Dashboard"><span class="menu-item-parent">Social
+									Wall</span></a></li>
+					</ul></li>
+
+			</ul>
+		</nav>
+	</aside>
+	<!-- END NAVIGATION -->
+
+	<!-- MAIN PANEL -->
+	<div id="main" role="main">
+
+		<!-- RIBBON -->
+		<div id="ribbon">
+			<span class="ribbon-button-alignment"> <span id="refresh"
+				class="btn btn-ribbon" data-action="resetWidgets"
+				data-title="refresh" rel="tooltip" data-placement="bottom"
+				data-original-title="<i class='text-warning fa fa-warning'></i> Warning! This will reset all your widget settings."
+				data-html="true"> <i class="fa fa-refresh"></i>
+			</span>
+			</span>
+
+			<!-- breadcrumb -->
+			<ol class="breadcrumb">
+				<li>Dashboard</li>
+			</ol>
+			<!-- end breadcrumb -->
+		</div>
+		<!-- END RIBBON -->
+
+		<!-- MAIN CONTENT -->
+		<div id="content">
+
+			<!-- row -->
+			<div class="row">
+				<!-- col -->
+				<div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
+					<h1 class="page-title txt-color-blueDark">
+						<!-- PAGE HEADER -->
+						<i class="fa-fw fa fa-home"></i> Dashboard
+					</h1>
+				</div>
+				<!-- end col -->
+			</div>
+			<!-- end col -->
+			<!-- widget grid -->
+			<section id="widget-grid" class="">
+
+				<!-- row -->
+				<div class="row">
+					<article class="col-md-offset-2 col-md-8 col-lg-8">
+						<div class="jarviswidget" id="wid-id-0"
+							data-widget-colorbutton="false" data-widget-editbutton="false"
+							data-widget-custombutton="false">
+							<div>
+								<div class="widget-body">
+									<form class="smart-form">
+										<fieldset>
+											<div class="row">
+												<section class="col col-4">
+													<label class="label">Project</label> <label class="select">
+														<select id="projectList"></select> <i></i>
+													</label>
+												</section>
+												<section class="col col-3">
+													<label class="label">From</label> <label class="input">
+														<i class="icon-append fa fa-calendar"></i> <input
+														type="text" name="fromdate" id="fromdate"
+														placeholder="From">
+													</label>
+												</section>
+												<section class="col col-3">
+													<label class="label">To</label> <label class="input">
+														<i class="icon-append fa fa-calendar"></i> <input
+														type="text" name="todate" id="todate" placeholder="To">
+													</label>
+												</section>
+											</div>
+										</fieldset>
+										<footer>
+											<button id="btnIssueFilter" class="btn btn-primary">Filter</button>
+										</footer>
+									</form>
+								</div>
+							</div>
+						</div>
+					</article>
+					<!-- NEW WIDGET START -->
+					<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+						<table id="issueList"></table>
+						<div id="pjqgrid"></div>
+						<br> <a href="javascript:void(0)" id="m1">Get Selected
+							id's</a>
+					</article>
+					<!-- WIDGET END -->
+
+				</div>
+
+				<!-- end row -->
+
+			</section>
+			<!-- end widget grid -->
+		</div>
+		<!-- main content -->
+
+	</div>
+	<!-- END MAIN PANEL -->
+
+	<!-- PAGE FOOTER -->
+	<div class="page-footer">
+		<div class="row">
+			<div class="col-xs-12 col-sm-6 text-right">
+				<span class="txt-color-white">Jira SVN migration 1.0 </span>
+			</div>
+
+		</div>
+	</div>
+	<!-- END PAGE FOOTER -->
+
+	<!-- PACE LOADER - turn this on if you want ajax loading to show (caution: uses lots of memory on iDevices)-->
+	<script data-pace-options='{ "restartOnRequestAfter": true }'
+		src="resources/js/plugin/pace/pace.min.js"></script>
+
+	<!-- Link to Google CDN's jQuery + jQueryUI; fall back to local -->
+	<script
+		src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script>
+		if (!window.jQuery) {
+			document
+					.write('<script src="js/libs/jquery-2.1.1.min.js"><\/script>');
+		}
+	</script>
+
+	<script
+		src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+	<script>
+		if (!window.jQuery.ui) {
+			document
+					.write('<script src="js/libs/jquery-ui-1.10.3.min.js"><\/script>');
+		}
+	</script>
+
+	<!-- BOOTSTRAP JS -->
+	<script src="resources/js/bootstrap/bootstrap.min.js"></script>
+	<!-- JARVIS WIDGETS -->
+	<script src="resources/js/smartwidgets/jarvis.widget.min.js"></script>
+	<!-- JQUERY VALIDATE -->
+	<script
+		src="resources/js/plugin/jquery-validate/jquery.validate.min.js"></script>
+
+	<!-- JQUERY SELECT2 INPUT -->
+	<script src="resources/js/plugin/select2/select2.min.js"></script>
+
+	<!-- browser msie issue fix -->
+	<script src="resources/js/plugin/msie-fix/jquery.mb.browser.min.js"></script>
+	<!-- PAGE RELATED PLUGIN(S) -->
+	<script src="resources/js/plugin/jquery-form/jquery-form.min.js"></script>
+	<!--[if IE 8]>
+
+		<h1>Your browser is out of date, please update your browser by going to www.microsoft.com/download</h1>
+
+		<![endif]-->
+
+	<script src="resources/js/plugin/jqgrid/jquery.jqGrid.min.js"></script>
+	<script src="resources/js/plugin/jqgrid/grid.locale-en.min.js"></script>
+	<script src="resources/js/jira.svn.js"></script>
+
+	<script type="text/javascript">
+		$(document)
+				.ready(
+						function() {
+							getProjectList("projectList");
+							// START AND FINISH DATE
+							$('#fromdate')
+									.datepicker(
+											{
+												dateFormat : 'yy/mm/dd',
+												prevText : '<i class="fa fa-chevron-left"></i>',
+												nextText : '<i class="fa fa-chevron-right"></i>',
+												onSelect : function(
+														selectedDate) {
+													$('#todate').datepicker(
+															'option',
+															'minDate',
+															selectedDate);
+												}
+											});
+
+							$('#todate')
+									.datepicker(
+											{
+												dateFormat : 'yy/mm/dd',
+												prevText : '<i class="fa fa-chevron-left"></i>',
+												nextText : '<i class="fa fa-chevron-right"></i>',
+												onSelect : function(
+														selectedDate) {
+													$('#fromdate').datepicker(
+															'option',
+															'maxDate',
+															selectedDate);
+												}
+											});
+
+							jQuery("#issueList").jqGrid(
+									{
+										shrinkToFit : true,
+										datatype : "local",
+										height : 'auto',
+										colNames : [ 'ID', 'Key', 'Summary',
+												'Created Date', 'Last Updated',
+												'Status' ],
+										colModel : [ {
+											name : 'id',
+											index : 'id',
+											width : 50
+										}, {
+											name : 'key',
+											index : 'key',
+											width : 50
+										}, {
+											name : 'summary',
+											index : 'summary',
+										}, {
+											name : 'created',
+											index : 'created',
+											width : 75
+										}, {
+											name : 'last_updated',
+											index : 'last_updated',
+											width : 75
+										}, {
+											name : 'status',
+											index : 'status',
+											width : 50
+										} ],
+										rowNum : 10,
+										pager : '#pjqgrid',
+										sortname : 'id',
+										toolbarfilter : true,
+										viewrecords : true,
+										sortorder : "asc",
+										editurl : "dummy.html",
+										caption : "Jira issues",
+										multiselect : true,
+										autowidth : true,
+
+									});
+
+							jQuery("#issueList").jqGrid('navGrid', "#pjqgrid",
+									{
+										add : false,
+										edit : false,
+										del : false,
+										search : false,
+										refresh : false
+									});
+
+							jQuery("#issueList").jqGrid('inlineNav',
+									"#pjqgrid", {
+										add : false,
+										edit : false
+									});
+							/* Add tooltips */
+							$('.navtable .ui-pg-button').tooltip({
+								container : 'body'
+							});
+
+							jQuery("#m1").click(
+									function() {
+										var s;
+										s = jQuery("#issueList").jqGrid(
+												'getGridParam', 'selarrrow');
+										alert(s);
+									});
+							jQuery("#m1s").click(
+									function() {
+										jQuery("#issueList").jqGrid(
+												'setSelection', "13");
+									});
+
+							// remove classes
+							$(".ui-jqgrid").removeClass(
+									"ui-widget ui-widget-content");
+							$(".ui-jqgrid-view").children().removeClass(
+									"ui-widget-header ui-state-default");
+							$(".ui-jqgrid-labels, .ui-search-toolbar")
+									.children()
+									.removeClass(
+											"ui-state-default ui-th-column ui-th-ltr");
+							$(".ui-jqgrid-pager").removeClass(
+									"ui-state-default");
+							$(".ui-jqgrid").removeClass("ui-widget-content");
+
+							// add classes
+							$(".ui-jqgrid-htable").addClass(
+									"table table-bordered table-hover");
+							$(".ui-jqgrid-btable").addClass(
+									"table table-bordered table-striped");
+
+							$(".ui-pg-div").removeClass().addClass(
+									"btn btn-sm btn-primary");
+							$(".ui-icon.ui-icon-plus").removeClass().addClass(
+									"fa fa-plus");
+
+							$(".ui-icon.ui-icon-search").removeClass()
+									.addClass("fa fa-search");
+							$(".ui-icon.ui-icon-refresh").removeClass()
+									.addClass("fa fa-refresh");
+							$(".ui-icon.ui-icon-disk").removeClass().addClass(
+									"fa fa-save").parent(".btn-primary")
+									.removeClass("btn-primary").addClass(
+											"btn-success");
+							$(".ui-icon.ui-icon-cancel").removeClass()
+									.addClass("fa fa-times").parent(
+											".btn-primary").removeClass(
+											"btn-primary").addClass(
+											"btn-danger");
+
+							$(".ui-icon.ui-icon-seek-prev")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-prev").removeClass()
+									.addClass("fa fa-backward");
+
+							$(".ui-icon.ui-icon-seek-first")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-first").removeClass()
+									.addClass("fa fa-fast-backward");
+
+							$(".ui-icon.ui-icon-seek-next")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-next").removeClass()
+									.addClass("fa fa-forward");
+
+							$(".ui-icon.ui-icon-seek-end")
+									.wrap(
+											"<div class='btn btn-sm btn-default'></div>");
+							$(".ui-icon.ui-icon-seek-end").removeClass()
+									.addClass("fa fa-fast-forward");
+							//filter click
+							$("#btnIssueFilter")
+									.click(
+											function(e) {
+												var projectId = $(
+														"#projectList").val();
+												var fromDate = $("#fromdate")
+														.val();
+												var toDate = $("#todate").val();
+												var fields = "id,key,summary,created,updated,status";
+												filterIssues("issueList",
+														projectId, fromDate,
+														toDate, fields);
+												e.preventDefault();
+											});
+						});
+
+		$(window).on('resize.jqGrid', function() {
+			$("#issueList").jqGrid('setGridWidth', $("#content").width());
+		})
+	</script>
+	<div id="message" title="Warning"></div>
+</body>
+
+</html>
