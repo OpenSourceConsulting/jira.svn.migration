@@ -33,13 +33,19 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 			"fields" : fields
 		}, function(json) {
 			$.each(json.list, function(k, v) {
+				var commits = "";
+				$.each(v.commits, function(key, value) {
+					commits += "Revision:" + value.revision + "-["
+							+ value.author + "] " + value.message + "<br/>";
+				});
 				data.push({
 					id : v.id,
 					key : v.key,
 					summary : v.summary,
 					created : v.created,
 					last_updated : v.updated,
-					status : v.status
+					status : v.status,
+					commits : commits
 				});
 			});
 			$("#" + gridId).jqGrid('setGridParam', {

@@ -137,12 +137,21 @@ public class JiraRestProxyController implements InitializingBean {
 			int id = obj.getInt("id");
 			String key = obj.getString("key");
 			String url = obj.getString("self");
-			JSONObject f = obj.getJSONObject("fields");
-			String summary = f.getString("summary");
-			String created = f.getString("created");
-			String updated = f.getString("updated");
-			String status = f.getJSONObject("status").getString("name");
-			issues.add(new Issue(id, key, url, summary, created, updated, status));
+			String summary = "";
+			String created = "";
+			String updated = "";
+			String status = "";
+			try {
+				JSONObject f = obj.getJSONObject("fields");
+				summary = f.getString("summary");
+				created = f.getString("created");
+				updated = f.getString("updated");
+				status = f.getJSONObject("status").getString("name");
+			} catch (Exception e) {
+
+			}
+			List<Commit> commits = commitRepo.search("key", key);
+			issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
 		}
 		json.setList(issues);
 		json.setTotal(issues.size());
