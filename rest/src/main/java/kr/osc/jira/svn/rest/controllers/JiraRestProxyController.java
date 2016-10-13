@@ -3,14 +3,17 @@
  */
 package kr.osc.jira.svn.rest.controllers;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
 import kr.osc.jira.svn.common.model.GridJsonResponse;
-import kr.osc.jira.svn.models.Issue;
-import kr.osc.jira.svn.models.Project;
+import kr.osc.jira.svn.rest.models.Commit;
+import kr.osc.jira.svn.rest.models.Issue;
+import kr.osc.jira.svn.rest.models.Project;
+import kr.osc.jira.svn.rest.repositories.CommitRepository;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
@@ -31,6 +34,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,6 +60,8 @@ public class JiraRestProxyController implements InitializingBean {
 	private HttpHost jiraHost;
 	private CredentialsProvider credsProvider;
 	private AuthCache authCache;
+	@Autowired
+	private CommitRepository commitRepo;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -141,6 +147,12 @@ public class JiraRestProxyController implements InitializingBean {
 		json.setList(issues);
 		json.setTotal(issues.size());
 		return json;
+	}
+
+	@RequestMapping("/jira/rest/api/commits")
+	@ResponseBody
+	public List<Commit> getCommits() throws IOException {
+		return commitRepo.search("key", "IP-1");
 	}
 
 	private String callAPI(HttpUriRequest request) throws Exception {

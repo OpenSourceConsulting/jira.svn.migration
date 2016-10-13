@@ -1,4 +1,4 @@
-package kr.osc.jira.svn.models;
+package kr.osc.jira.svn.rest.models;
 
 public class Issue {
 	private int id;
