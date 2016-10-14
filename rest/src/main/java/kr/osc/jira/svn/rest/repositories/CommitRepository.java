@@ -24,13 +24,13 @@ import org.springframework.stereotype.Repository;
 
 @Repository(value = "commitRepository")
 public class CommitRepository implements InitializingBean {
-	//@Value("${jira.svn.base.dir}")
+	@Value("${jira.svn.base.dir}")
 	private String path;
 	IndexSearcher searcher;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		path = "C:\\Program Files\\Atlassian\\Application Data\\JIRA\\caches\\indexes\\plugins\\atlassian-subversion-revisions";
+		//path = "C:\\Program Files\\Atlassian\\Application Data\\JIRA\\caches\\indexes\\plugins\\atlassian-subversion-revisions";
 		File file = new File(path);
 		Directory index = FSDirectory.open(file);
 		IndexReader reader = DirectoryReader.open(index);

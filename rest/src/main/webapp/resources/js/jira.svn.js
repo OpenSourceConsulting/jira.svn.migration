@@ -1,6 +1,6 @@
 function getProjectList(selectId) {
 	var select = $("#" + selectId);
-	var url = "/rest/jira/rest/api/projects";
+	var url = "/rest/api/projects";
 	var options = "<option value='0' selected>--Select project--</option>";
 	$.get(url, function(json) {
 		$.each(json.list, function(k, v) {
@@ -12,7 +12,7 @@ function getProjectList(selectId) {
 }
 
 function filterIssues(gridId, projectId, fromDate, toDate, fields) {
-	var url = "/rest/jira/rest/api/issues/filter";
+	var url = "/rest/api/issues/filter";
 	var data = [];
 	if (projectId == 0) { // maybe 0 or "0"
 		$("#message").text("Project is required");

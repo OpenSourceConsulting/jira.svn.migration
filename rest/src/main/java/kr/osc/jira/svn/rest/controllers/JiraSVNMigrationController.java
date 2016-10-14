@@ -6,6 +6,8 @@ package kr.osc.jira.svn.rest.controllers;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +16,7 @@ import kr.osc.jira.svn.rest.models.Commit;
 import kr.osc.jira.svn.rest.models.Issue;
 import kr.osc.jira.svn.rest.models.Project;
 import kr.osc.jira.svn.rest.repositories.CommitRepository;
+import kr.osc.jira.svn.rest.repositories.SubversionRepository;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
@@ -40,6 +43,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.tmatesoft.svn.core.SVNException;
 
 /**
  * @author Bongjin Kwon
@@ -47,7 +51,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  *
  */
 @Controller
-public class JiraRestProxyController implements InitializingBean {
+public class JiraSVNMigrationController implements InitializingBean {
 	@Value("${jira.ip}")
 	private String jiraIPAddr;
 	@Value("${jira.port}")
@@ -62,6 +66,8 @@ public class JiraRestProxyController implements InitializingBean {
 	private AuthCache authCache;
 	@Autowired
 	private CommitRepository commitRepo;
+	@Autowired
+	private SubversionRepository subversionRepo;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -72,25 +78,7 @@ public class JiraRestProxyController implements InitializingBean {
 		authCache.put(jiraHost, new BasicScheme());
 	}
 
-	//private HttpHost jiraHost = new HttpHost("hhivaas_app01", 2990, "http");
-
-	//	@RequestMapping("/jira/rest/api/2/issue")
-	//	@ResponseBody
-	//	public String create(@RequestParam("pkey") String pkey, @RequestParam("summary") String summary, @RequestParam("desc") String desc,
-	//			@RequestParam("itype") String itype) throws Exception {
-	//
-	//		Issue issue = new Issue(pkey, summary, desc, itype);
-	//		String json = om.writeValueAsString(issue);
-	//
-	//		System.out.println(json);
-	//
-	//		HttpUriRequest httpreq = RequestBuilder.post().setUri(new URI(jiraHost.toURI() + "/jira/rest/api/2/issue"))
-	//				.setHeader("Content-Type", "application/json;charset=UTF-8").setEntity(new StringEntity(json, "UTF-8")) // set json request body.
-	//				.build();
-	//
-	//		return callAPI(httpreq);
-	//	}
-	@RequestMapping("/jira/rest/api/projects")
+	@RequestMapping("/api/projects")
 	@ResponseBody
 	public GridJsonResponse getProjectList(GridJsonResponse json) throws Exception {
 		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/project")).build();
@@ -107,14 +95,14 @@ public class JiraRestProxyController implements InitializingBean {
 		return json;
 	}
 
-	@RequestMapping("/jira/rest/api/2/search")
+	@RequestMapping("/api/search")
 	@ResponseBody
 	public String search(@RequestParam("jql") String jql) throws Exception {
 		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/search")).addParameter("jql", jql).build();
 		return callAPI(httpget);
 	}
 
-	@RequestMapping("/jira/rest/api/issues/filter")
+	@RequestMapping("/api/issues/filter")
 	@ResponseBody
 	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate, String fields) throws Exception {
 		String jql = "project=" + projectId;
@@ -144,8 +132,8 @@ public class JiraRestProxyController implements InitializingBean {
 			try {
 				JSONObject f = obj.getJSONObject("fields");
 				summary = f.getString("summary");
-				created = f.getString("created");
-				updated = f.getString("updated");
+				created = f.getString("created").substring(0, "yyyy-MM-dd".length());
+				updated = f.getString("updated").substring(0, "yyyy-MM-dd".length());
 				status = f.getJSONObject("status").getString("name");
 			} catch (Exception e) {
 
@@ -158,10 +146,28 @@ public class JiraRestProxyController implements InitializingBean {
 		return json;
 	}
 
-	@RequestMapping("/jira/rest/api/commits")
+	@RequestMapping("/api/commits")
 	@ResponseBody
-	public List<Commit> getCommits() throws IOException {
-		return commitRepo.search("key", "IP-1");
+	public List<Commit> getCommits(String field, String value) throws IOException {
+		return commitRepo.search(field, value);
+	}
+
+	@RequestMapping("/api/svn/export")
+	@ResponseBody
+	//public void export(List<String> issueKeys) {
+	public void export(String issueKey) throws IOException, SVNException {
+		List<Commit> commits = commitRepo.search("key", issueKey);
+		if (commits.size() == 0) {
+			subversionRepo.export(null, null, true);
+		} else {
+			int latestRevision = -1;
+			for (Commit c : commits) {
+				if (c.getRevision() > latestRevision) {
+					latestRevision = c.getRevision();
+				}
+			}
+			subversionRepo.export(null, String.valueOf(latestRevision), true);
+		}
 	}
 
 	private String callAPI(HttpUriRequest request) throws Exception {
