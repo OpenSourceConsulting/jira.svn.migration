@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -31,6 +32,8 @@ public class SubversionRepository implements InitializingBean {
 	private String exportPathStr;
 	@Value("${svn.eol.style}")
 	private String eolStyle;
+	@Value("${svn.root.dir}")
+	private String svnRootDir;
 
 	private SVNRepository svnRepository;
 	private SVNClientManager clientManager;
@@ -103,7 +106,7 @@ public class SubversionRepository implements InitializingBean {
 	 * @return
 	 * @throws SVNException
 	 */
-	public void export(String pegRev, String rev, boolean overwrite) throws SVNException {
+	public String export(String pegRev, String rev, boolean overwrite) throws SVNException {
 
 		SVNRevision pegRevision = pegRev == null ? SVNRevision.HEAD : SVNRevision.parse(pegRev);
 		SVNRevision revision = rev == null ? SVNRevision.HEAD : SVNRevision.parse(rev);
@@ -118,14 +121,16 @@ public class SubversionRepository implements InitializingBean {
 		 */
 		long exportedRevision = updateClient.doExport(svnUrl, destPath, pegRevision, revision, eolStyle, overwrite, dept);
 		if (exportedRevision > 0) {
-			createZipFile(String.valueOf((new Date().getTime())) + ".zip");
+			String zipFileName = svnRootDir;
+			return createZipFile(zipFileName);
 		}
-
+		return StringUtils.EMPTY;
 	}
 
 	private String createZipFile(String fileName) {
-		String zipFile = destPath.getPath() + "\\" + fileName;
-		ZipUtil.pack(destPath, new File(zipFile));
+		String zipFile = destPath.getPath() + "\\" + fileName + ".zip";
+		File sourceDir = new File(destPath.getPath() + "\\" + fileName);
+		ZipUtil.pack(sourceDir, new File(zipFile));
 		return zipFile;
 	}
 }

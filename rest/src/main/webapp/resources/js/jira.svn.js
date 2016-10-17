@@ -54,3 +54,18 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 		});
 	}
 }
+
+function exportSourceCode(issueIds) {
+	var issueKeys = [];
+	for (i = 0; i < issueIds.length; i++) {
+		id = issueIds[i];
+		var key = $("#issueList").jqGrid('getCell', id, 'key');
+		issueKeys.push(key);
+	}
+	if (issueKeys.length == 0) {
+		return;
+	} else {
+		var url = "/rest/api/svn/export";
+		window.location.href = url + "?issueKeys[]=" + issueKeys.join(",");
+	}
+}

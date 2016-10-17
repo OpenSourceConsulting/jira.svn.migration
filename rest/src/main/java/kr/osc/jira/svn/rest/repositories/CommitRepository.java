@@ -37,6 +37,14 @@ public class CommitRepository implements InitializingBean {
 		searcher = new IndexSearcher(reader);
 	}
 
+	public List<Commit> search(String field, String[] keywords) throws IOException {
+		List<Commit> results = new ArrayList<Commit>();
+		for (String keyword : keywords) {
+			results.addAll(this.search(field, keyword));
+		}
+		return results;
+	}
+
 	public List<Commit> search(String field, String keyword) throws IOException {
 		List<Commit> results = new ArrayList<Commit>();
 		Query q = new TermQuery(new Term(field, keyword));

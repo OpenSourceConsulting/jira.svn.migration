@@ -308,7 +308,7 @@
 												} ],
 												rowNum : 10,
 												pager : '#pjqgrid',
-												sortname : 'id',
+												sortname : 'key',
 												toolbarfilter : true,
 												viewrecords : true,
 												sortorder : "asc",
@@ -322,10 +322,9 @@
 															.jqGrid(
 																	'getDataIDs');
 													for (var i = 0; i < ids.length; i++) {
-														var cl = ids[i];
-														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"jQuery('#jqgrid').saveRow('"
-																+ cl
-																+ "');\"><i class='fa fa-save'></i></button>";
+														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"exportSourceCode(["
+																+ ids[i]
+																+ "])\"><i class='fa fa-save'></i></button>";
 														jQuery("#issueList")
 																.jqGrid(
 																		'setRowData',
@@ -349,7 +348,8 @@
 							jQuery("#issueList").jqGrid('inlineNav',
 									"#pjqgrid", {
 										add : false,
-										edit : false
+										edit : false,
+										cancel:false
 									});
 							/* Add tooltips */
 							$('.navtable .ui-pg-button').tooltip({
@@ -362,11 +362,6 @@
 										s = jQuery("#issueList").jqGrid(
 												'getGridParam', 'selarrrow');
 										alert(s);
-									});
-							jQuery("#m1s").click(
-									function() {
-										jQuery("#issueList").jqGrid(
-												'setSelection', "13");
 									});
 
 							// remove classes
@@ -434,6 +429,9 @@
 							$("#btnIssueFilter")
 									.click(
 											function(e) {
+												//reset list
+												$("#issueList").jqGrid(
+														'clearGridData');
 												var projectId = $(
 														"#projectList").val();
 												var fromDate = $("#fromdate")

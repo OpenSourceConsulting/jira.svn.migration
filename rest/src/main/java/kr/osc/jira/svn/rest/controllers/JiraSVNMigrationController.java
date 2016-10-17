@@ -3,13 +3,18 @@
  */
 package kr.osc.jira.svn.rest.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
 
 import kr.osc.jira.svn.common.model.GridJsonResponse;
 import kr.osc.jira.svn.rest.models.Commit;
@@ -44,6 +49,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.tmatesoft.svn.core.SVNException;
+import org.zeroturnaround.zip.commons.IOUtils;
 
 /**
  * @author Bongjin Kwon
@@ -155,8 +161,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@RequestMapping("/api/svn/export")
 	@ResponseBody
 	//public void export(List<String> issueKeys) {
-	public void export(String issueKey) throws IOException, SVNException {
-		List<Commit> commits = commitRepo.search("key", issueKey);
+	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws IOException, SVNException {
+		List<Commit> commits = commitRepo.search("key", issueKeys);
 		if (commits.size() == 0) {
 			subversionRepo.export(null, null, true);
 		} else {
@@ -166,7 +172,15 @@ public class JiraSVNMigrationController implements InitializingBean {
 					latestRevision = c.getRevision();
 				}
 			}
-			subversionRepo.export(null, String.valueOf(latestRevision), true);
+			String zipFile = subversionRepo.export(null, String.valueOf(latestRevision), true);
+			if (StringUtils.isNotEmpty(zipFile)) {
+				response.setContentType("application/zip");
+				String fileName = zipFile.substring(zipFile.lastIndexOf("\\") + 1);
+				response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+				InputStream is = new FileInputStream(new File(zipFile));
+				IOUtils.copy(is, response.getOutputStream());
+				response.flushBuffer();
+			}
 		}
 	}
 
