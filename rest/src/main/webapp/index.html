@@ -155,8 +155,9 @@
 					<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 						<table id="issueList"></table>
 						<div id="pjqgrid"></div>
-						<br> <a href="javascript:void(0)" id="m1">Get Selected
-							id's</a>
+						<br>
+						<button id="exportBtn" class="btn btn-primary fa fa-download">
+							&nbsp;Export</button>
 					</article>
 					<!-- WIDGET END -->
 
@@ -322,9 +323,9 @@
 															.jqGrid(
 																	'getDataIDs');
 													for (var i = 0; i < ids.length; i++) {
-														se = "<button class='btn btn-xs btn-default' data-original-title='Save Row' onclick=\"exportSourceCode(["
+														se = "<button class='btn btn-xs btn-default' data-original-title='Download' onclick=\"exportSourceCode(["
 																+ ids[i]
-																+ "])\"><i class='fa fa-save'></i></button>";
+																+ "])\"><i class='fa fa-download'></i></button>";
 														jQuery("#issueList")
 																.jqGrid(
 																		'setRowData',
@@ -336,35 +337,22 @@
 												}
 											});
 
-							jQuery("#issueList").jqGrid('navGrid', "#pjqgrid",
-									{
-										add : false,
-										edit : false,
-										del : false,
-										search : false,
-										refresh : false
-									});
-
-							jQuery("#issueList").jqGrid('inlineNav',
-									"#pjqgrid", {
-										add : false,
-										edit : false,
-										cancel:false
-									});
 							/* Add tooltips */
 							$('.navtable .ui-pg-button').tooltip({
 								container : 'body'
 							});
 
-							jQuery("#m1").click(
+							//export multiple issues
+							jQuery("#exportBtn").click(
 									function() {
-										var s;
-										s = jQuery("#issueList").jqGrid(
+										var ids = jQuery("#issueList").jqGrid(
 												'getGridParam', 'selarrrow');
-										alert(s);
+										exportSourceCode(ids);
 									});
 
+							// 						
 							// remove classes
+
 							$(".ui-jqgrid").removeClass(
 									"ui-widget ui-widget-content");
 							$(".ui-jqgrid-view").children().removeClass(
@@ -387,20 +375,6 @@
 									"btn btn-sm btn-primary");
 							$(".ui-icon.ui-icon-plus").removeClass().addClass(
 									"fa fa-plus");
-
-							$(".ui-icon.ui-icon-search").removeClass()
-									.addClass("fa fa-search");
-							$(".ui-icon.ui-icon-refresh").removeClass()
-									.addClass("fa fa-refresh");
-							$(".ui-icon.ui-icon-disk").removeClass().addClass(
-									"fa fa-save").parent(".btn-primary")
-									.removeClass("btn-primary").addClass(
-											"btn-success");
-							$(".ui-icon.ui-icon-cancel").removeClass()
-									.addClass("fa fa-times").parent(
-											".btn-primary").removeClass(
-											"btn-primary").addClass(
-											"btn-danger");
 
 							$(".ui-icon.ui-icon-seek-prev")
 									.wrap(
