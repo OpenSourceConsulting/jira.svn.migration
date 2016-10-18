@@ -20,6 +20,7 @@ import kr.osc.jira.svn.common.model.GridJsonResponse;
 import kr.osc.jira.svn.rest.models.Commit;
 import kr.osc.jira.svn.rest.models.Issue;
 import kr.osc.jira.svn.rest.models.Project;
+import kr.osc.jira.svn.rest.models.SVNElement;
 import kr.osc.jira.svn.rest.repositories.CommitRepository;
 import kr.osc.jira.svn.rest.repositories.SubversionRepository;
 
@@ -66,6 +67,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 	private String username;
 	@Value("${jira.password}")
 	private String password;
+	@Value("${server.os}")
+	private String serverOs;
 
 	private HttpHost jiraHost;
 	private CredentialsProvider credsProvider;
@@ -160,7 +163,6 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping("/api/svn/export")
 	@ResponseBody
-	//public void export(List<String> issueKeys) {
 	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws IOException, SVNException {
 		List<Commit> commits = commitRepo.search("key", issueKeys);
 		if (commits.size() == 0) {
@@ -174,14 +176,25 @@ public class JiraSVNMigrationController implements InitializingBean {
 			}
 			String zipFile = subversionRepo.export(null, String.valueOf(latestRevision), true);
 			if (StringUtils.isNotEmpty(zipFile)) {
+				String subDirSeparator = "/";
+				if (serverOs.equals("windows")) {
+					subDirSeparator = "\\";
+				}
 				response.setContentType("application/zip");
-				String fileName = zipFile.substring(zipFile.lastIndexOf("\\") + 1);
+				String fileName = zipFile.substring(zipFile.lastIndexOf(subDirSeparator) + 1);
 				response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
 				InputStream is = new FileInputStream(new File(zipFile));
 				IOUtils.copy(is, response.getOutputStream());
 				response.flushBuffer();
 			}
 		}
+	}
+
+	@RequestMapping("/api/svn/tree")
+	@ResponseBody
+	public SVNElement getSVNTree() throws SVNException {
+		return subversionRepo.getSVNTree();
+
 	}
 
 	private String callAPI(HttpUriRequest request) throws Exception {

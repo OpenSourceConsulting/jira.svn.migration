@@ -2,14 +2,22 @@ package kr.osc.jira.svn.rest.repositories;
 
 import java.io.File;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import kr.osc.jira.svn.rest.models.SVNElement;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.tmatesoft.svn.core.SVNDepth;
+import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.io.SVNRepository;
@@ -34,6 +42,8 @@ public class SubversionRepository implements InitializingBean {
 	private String eolStyle;
 	@Value("${svn.root.dir}")
 	private String svnRootDir;
+	@Value("${server.os}")
+	private String serverOs;
 
 	private SVNRepository svnRepository;
 	private SVNClientManager clientManager;
@@ -47,6 +57,7 @@ public class SubversionRepository implements InitializingBean {
 		svnUrl = SVNURL.parseURIEncoded(url);
 		svnRepository = SVNRepositoryFactory.create(svnUrl);
 		svnRepository.setAuthenticationManager(authManager);
+		clientManager.setAuthenticationManager(authManager);
 		destPath = new File(exportPathStr);
 
 	}
@@ -127,9 +138,46 @@ public class SubversionRepository implements InitializingBean {
 		return StringUtils.EMPTY;
 	}
 
+	public List<SVNElement> listEntries(SVNRepository repository, String path) throws SVNException {
+		List<SVNElement> children = new ArrayList<SVNElement>();
+		Collection entries = repository.getDir(path, -1, null, (Collection) null);
+		Iterator iterator = entries.iterator();
+		while (iterator.hasNext()) {
+			SVNDirEntry entry = (SVNDirEntry) iterator.next();
+			SVNElement element = new SVNElement();
+			element.setLastAuthor(entry.getAuthor());
+			element.setLastChanged(entry.getDate());
+			element.setRevision(entry.getRevision());
+			element.setUrl(entry.getURL().toString());
+			element.setResource(entry.getName());
+			if (entry.getKind() == SVNNodeKind.DIR) {
+				element.setType("dir");
+				element.setChildNodes(listEntries(repository, (path.equals("")) ? entry.getName() : path + "/" + entry.getName()));
+			} else if (entry.getKind() == SVNNodeKind.FILE) {
+				element.setType("file");
+			}
+			children.add(element);
+		}
+		return children;
+	}
+
+	public SVNElement getSVNTree() throws SVNException {
+
+		//add the root element by svn url
+		SVNElement root = new SVNElement();
+		SVNURL rootUrl = svnRepository.getRepositoryRoot(true);
+		root.setResource(rootUrl.toString());
+		root.setChildNodes(listEntries(svnRepository, ""));
+		return root;
+	}
+
 	private String createZipFile(String fileName) {
-		String zipFile = destPath.getPath() + "\\" + fileName + ".zip";
-		File sourceDir = new File(destPath.getPath() + "\\" + fileName);
+		String subDirSeparator = "/";
+		if (serverOs.equals("windows")) {
+			subDirSeparator = "\\";
+		}
+		String zipFile = destPath.getPath() + subDirSeparator + fileName + ".zip";
+		File sourceDir = new File(destPath.getPath() + subDirSeparator + fileName);
 		ZipUtil.pack(sourceDir, new File(zipFile));
 		return zipFile;
 	}

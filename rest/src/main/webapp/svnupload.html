@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<title>SmartAdmin</title>
+<meta name="description" content="">
+<meta name="author" content="">
+
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- #CSS Links -->
+<!-- Basic Styles -->
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/font-awesome.min.css">
+
+<!-- SmartAdmin Styles : Caution! DO NOT change the order -->
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-production-plugins.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-production.min.css">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="resources/css/smartadmin-skins.min.css">
+
+<!-- We recommend you use "your_style.css" to override SmartAdmin
+		specific styles this will also ensure you retrain your customization with each SmartAdmin update.
+		<link rel="stylesheet" type="text/css" media="screen" href="css/your_style.css"> -->
+
+<!-- #FAVICONS -->
+<link rel="shortcut icon" href="resources/img/favicon.png"
+	type="image/x-icon">
+<link rel="icon" href="resources/img/favicon.png" type="image/x-icon">
+
+<!-- #GOOGLE FONT -->
+<link rel="stylesheet"
+	href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,300,400,700">
+
+<style>
+.show-grid [class^="col-"] {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	background-color: rgba(61, 106, 124, 0.15);
+	border: 1px solid rgba(61, 106, 124, 0.2);
+}
+
+.show-grid {
+	margin-bottom: 15px;
+}
+
+th small {
+	font-size: 12px;
+	display: block;
+	color: #8D8D8D;
+	font-weight: normal;
+}
+
+/*
+			 * Responsive tests
+			 *
+			 * Generate a set of tests to show the responsive utilities in action.
+			 */
+
+/* Responsive (scrollable) doc tables */
+.table-responsive .highlight pre {
+	white-space: normal;
+}
+
+/* Utility classes table  */
+.bs-table th small, .responsive-utilities th small {
+	display: block;
+	font-weight: normal;
+	color: #999;
+	font-size: 12px;
+}
+
+.responsive-utilities tbody th {
+	font-weight: normal;
+}
+
+.responsive-utilities td {
+	text-align: center;
+}
+
+.responsive-utilities td.is-visible {
+	color: rgba(61, 106, 124, 1);
+	background-color: rgba(61, 106, 124, 0.07) !important;
+}
+
+.responsive-utilities td.is-hidden {
+	color: #ccc;
+	background-color: #f9f9f9 !important;
+}
+
+/* Responsive tests */
+.responsive-utilities-test {
+	margin-top: 5px;
+}
+
+.responsive-utilities-test .col-xs-6 {
+	margin-bottom: 10px;
+}
+
+.responsive-utilities-test span {
+	padding: 15px 10px;
+	font-size: 14px;
+	font-weight: bold;
+	line-height: 1.1;
+	text-align: center;
+	border-radius: 4px;
+}
+
+.visible-on .col-xs-6 .hidden-xs, .visible-on .col-xs-6 .hidden-sm,
+	.visible-on .col-xs-6 .hidden-md, .visible-on .col-xs-6 .hidden-lg,
+	.hidden-on .col-xs-6 .visible-xs, .hidden-on .col-xs-6 .visible-sm,
+	.hidden-on .col-xs-6 .visible-md, .hidden-on .col-xs-6 .visible-lg {
+	color: #999;
+	border: 1px solid #ddd;
+}
+
+.visible-on .col-xs-6 .visible-xs, .visible-on .col-xs-6 .visible-sm,
+	.visible-on .col-xs-6 .visible-md, .visible-on .col-xs-6 .visible-lg,
+	.hidden-on .col-xs-6 .hidden-xs, .hidden-on .col-xs-6 .hidden-sm,
+	.hidden-on .col-xs-6 .hidden-md, .hidden-on .col-xs-6 .hidden-lg {
+	color: #468847;
+	background-color: #dff0d8;
+	border: 1px solid #d6e9c6;
+}
+</style>
+</head>
+
+<body class="">
+
+	<!-- HEADER -->
+	<header id="header">
+		<div id="logo-group">
+			<!-- PLACE YOUR LOGO HERE -->
+			<span id="logo"> <img src="resources/img/osc-logo.png"
+				alt="SmartAdmin">
+			</span>
+			<!-- END LOGO PLACEHOLDER -->
+		</div>
+
+	</header>
+	<!-- END HEADER -->
+
+	<!-- Left panel : Navigation area -->
+	<!-- Note: This width of the aside area can be adjusted through LESS variables -->
+	<aside id="left-panel">
+		<nav>
+			<ul>
+				<li><a href="/rest/" title="Dashboard"><i
+						class="fa fa-lg fa-fw fa-home"></i> <span class="menu-item-parent">Dashboard</span></a>
+				</li>
+				<li><a href="/rest/svnupload.html" title="Dashboard"><i
+						class="fa fa-lg fa-fw fa-cloud-upload"></i> <span
+						class="menu-item-parent">SVN Upload</span></a></li>
+
+			</ul>
+		</nav>
+	</aside>
+	<!-- END NAVIGATION -->
+
+	<!-- MAIN PANEL -->
+	<div id="main" role="main">
+
+		<!-- MAIN CONTENT -->
+		<div id="content">
+			<!-- row -->
+			<div class="row">
+				<!-- col -->
+				<div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
+					<h1 class="page-title txt-color-blueDark">
+						<!-- PAGE HEADER -->
+						<i class="fa-fw fa fa-cloud-upload"></i> SVN Upload
+					</h1>
+				</div>
+				<!-- end col -->
+			</div>
+
+			<section id="widget-svn">
+				<div class="well">
+					<div class="row show-grid">
+						<div class="col-md-3">
+							<div class="tree" id="svnTree" style="overflow-x: scroll;"></div>
+						</div>
+						<div class="col-md-9"></div>
+					</div>
+				</div>
+			</section>
+			<!-- end col -->
+		</div>
+		<!-- main content -->
+
+	</div>
+	<!-- END MAIN PANEL -->
+
+	<!-- PAGE FOOTER -->
+	<div class="page-footer">
+		<div class="row">
+			<div class="col-xs-12 col-sm-6 text-right">
+				<span class="txt-color-white">Jira SVN migration 1.0 </span>
+			</div>
+
+		</div>
+	</div>
+	<!-- END PAGE FOOTER -->
+
+	<!-- PACE LOADER - turn this on if you want ajax loading to show (caution: uses lots of memory on iDevices)-->
+	<script data-pace-options='{ "restartOnRequestAfter": true }'
+		src="resources/js/plugin/pace/pace.min.js"></script>
+
+	<!-- Link to Google CDN's jQuery + jQueryUI; fall back to local -->
+	<script
+		src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script>
+		if (!window.jQuery) {
+			document
+					.write('<script src="js/libs/jquery-2.1.1.min.js"><\/script>');
+		}
+	</script>
+
+	<script
+		src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+	<script>
+		if (!window.jQuery.ui) {
+			document
+					.write('<script src="js/libs/jquery-ui-1.10.3.min.js"><\/script>');
+		}
+	</script>
+
+	<!-- BOOTSTRAP JS -->
+	<script src="resources/js/bootstrap/bootstrap.min.js"></script>
+	<!-- JARVIS WIDGETS -->
+	<script src="resources/js/smartwidgets/jarvis.widget.min.js"></script>
+	<!-- JQUERY VALIDATE -->
+	<script
+		src="resources/js/plugin/jquery-validate/jquery.validate.min.js"></script>
+
+	<!-- JQUERY SELECT2 INPUT -->
+	<script src="resources/js/plugin/select2/select2.min.js"></script>
+
+	<!-- browser msie issue fix -->
+	<script src="resources/js/plugin/msie-fix/jquery.mb.browser.min.js"></script>
+	<!-- PAGE RELATED PLUGIN(S) -->
+	<script src="resources/js/plugin/jquery-form/jquery-form.min.js"></script>
+	<!--[if IE 8]>
+
+		<h1>Your browser is out of date, please update your browser by going to www.microsoft.com/download</h1>
+
+		<![endif]-->
+
+	<script src="resources/js/jira.svn.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			
+			//gen svn tree view
+			generateSVNTree("svnTree", function(){
+				// PAGE RELATED SCRIPTS
+				$('.tree > ul').attr('role', 'tree').find('ul').attr('role', 'group');
+				$('.tree').find('li:has(ul)').addClass('parent_li').attr('role',
+						'treeitem').find(' > span').on(
+						'click',
+						function(e) {
+							var children = $(this).parent('li.parent_li').find(
+									' > ul > li');
+							if (children.is(':visible')) {
+								children.hide('fast');
+								$(this).find(' > i').removeClass().addClass(
+												'fa fa-folder');
+							} else {
+								children.show('fast');
+								$(this).find(
+										' > i').removeClass().addClass(
+										'fa fa-folder-open');
+							}
+							e.stopPropagation();
+						});
+			});
+
+		})
+	</script>
+	<div id="message" title="Warning"></div>
+</body>
+
+</html>

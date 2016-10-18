@@ -69,3 +69,51 @@ function exportSourceCode(issueIds) {
 		window.location.href = url + "?issueKeys[]=" + issueKeys.join(",");
 	}
 }
+
+function generateSVNTree(treeId, callback) {
+	var tree = $("#" + treeId);
+	var url = "/rest/api/svn/tree";
+	$.get(url, function(json) {
+
+		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>'
+				+ json.resource + '</span>';
+		var childNodes = "<ul>"
+		childNodes += listChildNodes(json.childNodes);
+		childNodes += "</ul>";
+		rootNode += childNodes;
+		rootNode += "</li>";
+		tree.html("<ul>" + rootNode + "</ul>");
+		callback();
+	});
+}
+
+function listChildNodes(childNodes) {
+	var tooltip = "";
+	var result = "";
+	if (childNodes === undefined || childNodes === null) {
+		return;
+	}
+	$.each(childNodes, function(k, v) {
+		tooltip = "Resource:" + v.resource + "\n" + "Last Change Date:"
+				+ v.lastChanged + "\n" + "Last Author:" + v.lastAuthor;
+		var cls = "fa fa-lg "
+		if (v.type === "dir") {
+			cls += "fa-folder";
+			result += '<li style="display:none"><span title="' + tooltip
+					+ '"><i class="' + cls + '"></i>' + v.resource + '&nbsp;'
+					+ v.revision + '</span>';
+			if (v.childNodes !== null) {
+				result += "<ul>";
+				result += listChildNodes(v.childNodes);
+				result += "</ul>";
+			}
+		} else if (v.type === "file") {
+			cls += "fa-file-code-o";
+			result += '<li style="display:none"><span title="' + tooltip
+					+ '"><i class="' + cls + '"></i>' + v.resource + '&nbsp;'
+					+ v.revision + '</span>';
+		}
+
+	});
+	return result;
+}
