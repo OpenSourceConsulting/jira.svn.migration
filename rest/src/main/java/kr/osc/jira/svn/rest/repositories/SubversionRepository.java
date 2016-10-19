@@ -4,12 +4,14 @@ import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import kr.osc.jira.svn.rest.models.SVNElement;
 
+import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -158,6 +160,7 @@ public class SubversionRepository implements InitializingBean {
 			}
 			children.add(element);
 		}
+		Collections.sort(children);
 		return children;
 	}
 
@@ -167,6 +170,7 @@ public class SubversionRepository implements InitializingBean {
 		SVNElement root = new SVNElement();
 		SVNURL rootUrl = svnRepository.getRepositoryRoot(true);
 		root.setResource(rootUrl.toString());
+		root.setUrl(rootUrl.toString());
 		root.setChildNodes(listEntries(svnRepository, ""));
 		return root;
 	}

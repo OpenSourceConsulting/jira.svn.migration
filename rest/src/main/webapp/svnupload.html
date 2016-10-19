@@ -182,10 +182,48 @@ th small {
 			<section id="widget-svn">
 				<div class="well">
 					<div class="row show-grid">
-						<div class="col-md-3">
+						<div class="col-sm-3">
 							<div class="tree" id="svnTree" style="overflow-x: scroll;"></div>
 						</div>
-						<div class="col-md-9"></div>
+						<div class="col-md-9">
+
+							<form class="smart-form">
+								<fieldset>
+									<section>
+										<label class="label">Selected path</label> <label
+											class="input"> <i
+											class="icon-prepend fa fa-folder-open"></i><input type="text"
+											placeholder="Select destination from left tree view."
+											readonly="readonly" id="selectedPath">
+										</label>
+										<div class="note">In order to replace a file, select a
+											correlative one in tree view.</div>
+									</section>
+									<section>
+										<label class="label">Source code</label>
+										<div class="input input-file">
+											<span class="button"><input type="file" id="file"
+												name="file"
+												onchange="this.parentNode.nextSibling.value = this.value">Browse</span><input
+												type="text"
+												placeholder="Browse a *.zip file to import a directory."
+												readonly="">
+										</div>
+									</section>
+									<section>
+										<label class="label">Message</label> <label class="textarea">
+											<textarea rows="3"
+												placeholder="Leave a commit message(optional)."></textarea>
+										</label>
+									</section>
+								</fieldset>
+								<footer>
+									<button id="importBtn" class="btn btn-primary">Import</button>
+								</footer>
+							</form>
+
+
+						</div>
 					</div>
 				</div>
 			</section>
@@ -254,33 +292,47 @@ th small {
 	<script src="resources/js/jira.svn.js"></script>
 
 	<script type="text/javascript">
-		$(document).ready(function() {
-			
-			//gen svn tree view
-			generateSVNTree("svnTree", function(){
-				// PAGE RELATED SCRIPTS
-				$('.tree > ul').attr('role', 'tree').find('ul').attr('role', 'group');
-				$('.tree').find('li:has(ul)').addClass('parent_li').attr('role',
-						'treeitem').find(' > span').on(
-						'click',
-						function(e) {
-							var children = $(this).parent('li.parent_li').find(
-									' > ul > li');
-							if (children.is(':visible')) {
-								children.hide('fast');
-								$(this).find(' > i').removeClass().addClass(
-												'fa fa-folder');
-							} else {
-								children.show('fast');
-								$(this).find(
-										' > i').removeClass().addClass(
-										'fa fa-folder-open');
-							}
-							e.stopPropagation();
-						});
-			});
+		$(document)
+				.ready(
+						function() {
 
-		})
+							//gen svn tree view
+							generateSVNTree(
+									"svnTree",
+									function() {
+										// PAGE RELATED SCRIPTS
+										$('.tree > ul').attr('role', 'tree')
+												.find('ul').attr('role',
+														'group');
+										$('.tree > ul')
+												.find('li:has(ul)')
+												.addClass('parent_li')
+												.attr('role', 'treeitem')
+												.find(' > span')
+												.on('click',
+														function(e) {
+															var children = $(this).parent('li.parent_li').find(' > ul > li');
+															if (children.is(':visible')) {
+																children.hide('fast');
+																$(this).find(' > i').removeClass().addClass('fa fa-folder');
+															} else {
+																children.show('fast');
+																if(!$(this).find(' > i').hasClass('fa-database')){ //dont change in root element
+																	$(this).find(' > i').removeClass().addClass('fa fa-folder-open');
+																}
+															}
+															//e.stopPropagation();
+														
+														});
+										
+ 										$('.tree > ul').find('li').on('click',function (e){
+ 											var selectedPath = $(this).find(' > span.hidden').text();
+ 											$("#selectedPath").val(selectedPath);
+ 											e.stopPropagation();
+ 										});
+									});
+
+						})
 	</script>
 	<div id="message" title="Warning"></div>
 </body>

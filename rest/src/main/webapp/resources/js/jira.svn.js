@@ -89,6 +89,7 @@ function generateSVNTree(treeId, callback) {
 
 		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>'
 				+ json.resource + '</span>';
+		rootNode+="<span class='hidden'>"+json.url+"</span>";
 		var childNodes = "<ul>"
 		childNodes += listChildNodes(json.childNodes);
 		childNodes += "</ul>";
@@ -114,6 +115,7 @@ function listChildNodes(childNodes) {
 			result += '<li style="display:none"><span title="' + tooltip
 					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
 					+ v.revision + '</span>';
+			result +="<span class='hidden'>" + v.url + "</span>";
 			if (v.childNodes !== null) {
 				result += "<ul>";
 				result += listChildNodes(v.childNodes);
@@ -124,6 +126,7 @@ function listChildNodes(childNodes) {
 			result += '<li style="display:none"><span title="' + tooltip
 					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
 					+ v.revision + '</span>';
+			result +="<span class='hidden'>" + v.url + "</span>";
 		}
 
 	});
