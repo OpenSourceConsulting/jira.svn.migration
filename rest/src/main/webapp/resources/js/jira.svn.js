@@ -38,10 +38,14 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 					commits += "Revision:" + value.revision + "-["
 							+ value.author + "] " + value.message + "<br/>";
 				});
+				if(commits===""){
+					commits="No commit.";
+				}
 				data.push({
 					id : v.id,
 					key : v.key,
 					summary : v.summary,
+					url : v.url,
 					created : v.created,
 					last_updated : v.updated,
 					status : v.status,
@@ -55,6 +59,14 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 	}
 }
 
+// format cell jqgrid for adding a link to summary column
+function showJiraLink(cellvalue, options, rowObject) {
+	var restUrl = rowObject["url"];
+	var baseLink = restUrl.substring(0, restUrl.indexOf("rest"));
+	var url = baseLink + "browse/" + rowObject["key"];
+
+	return "<a target='_blank' href='" + url + "'>" + cellvalue + "</a>";
+}
 function exportSourceCode(issueIds) {
 	var issueKeys = [];
 	for (i = 0; i < issueIds.length; i++) {
@@ -100,7 +112,7 @@ function listChildNodes(childNodes) {
 		if (v.type === "dir") {
 			cls += "fa-folder";
 			result += '<li style="display:none"><span title="' + tooltip
-					+ '"><i class="' + cls + '"></i>' + v.resource + '&nbsp;'
+					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
 					+ v.revision + '</span>';
 			if (v.childNodes !== null) {
 				result += "<ul>";
@@ -110,7 +122,7 @@ function listChildNodes(childNodes) {
 		} else if (v.type === "file") {
 			cls += "fa-file-code-o";
 			result += '<li style="display:none"><span title="' + tooltip
-					+ '"><i class="' + cls + '"></i>' + v.resource + '&nbsp;'
+					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
 					+ v.revision + '</span>';
 		}
 
