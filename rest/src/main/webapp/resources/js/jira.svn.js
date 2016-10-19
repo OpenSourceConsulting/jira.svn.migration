@@ -38,8 +38,8 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 					commits += "Revision:" + value.revision + "-["
 							+ value.author + "] " + value.message + "<br/>";
 				});
-				if(commits===""){
-					commits="No commit.";
+				if (commits === "") {
+					commits = "No commit.";
 				}
 				data.push({
 					id : v.id,
@@ -89,7 +89,7 @@ function generateSVNTree(treeId, callback) {
 
 		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>'
 				+ json.resource + '</span>';
-		rootNode+="<span class='hidden'>"+json.url+"</span>";
+		rootNode += "<span class='hidden'>" + json.url + "</span>";
 		var childNodes = "<ul>"
 		childNodes += listChildNodes(json.childNodes);
 		childNodes += "</ul>";
@@ -115,7 +115,7 @@ function listChildNodes(childNodes) {
 			result += '<li style="display:none"><span title="' + tooltip
 					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
 					+ v.revision + '</span>';
-			result +="<span class='hidden'>" + v.url + "</span>";
+			result += "<span class='hidden'>" + v.url + "</span>";
 			if (v.childNodes !== null) {
 				result += "<ul>";
 				result += listChildNodes(v.childNodes);
@@ -126,9 +126,32 @@ function listChildNodes(childNodes) {
 			result += '<li style="display:none"><span title="' + tooltip
 					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
 					+ v.revision + '</span>';
-			result +="<span class='hidden'>" + v.url + "</span>";
+			result += "<span class='hidden'>" + v.url + "</span>";
 		}
 
 	});
 	return result;
+}
+
+function submitImportForm() {
+	var formData = new FormData();
+	formData.append("selectedPath",$("#selectedPath").val());
+	formData.append("message",$("#message").val());
+	formData.append("file",$("#file")[0].files[0]);
+	var url = "/rest/api/svn/import";
+	$.ajax({
+		type : "POST",
+		url : url,
+		data: formData,
+		processData: false,
+		contentType: false,
+		enctype:'multipart/form-data',
+		success : function() {
+			alert("submitted")
+		},
+		failure : function(e) {
+			alert(e);
+
+		}
+	});
 }

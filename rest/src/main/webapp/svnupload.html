@@ -187,14 +187,14 @@ th small {
 						</div>
 						<div class="col-md-9">
 
-							<form class="smart-form">
+							<form class="smart-form" id="importForm" enctype ="multipart/form-data"> 
 								<fieldset>
 									<section>
 										<label class="label">Selected path</label> <label
 											class="input"> <i
 											class="icon-prepend fa fa-folder-open"></i><input type="text"
 											placeholder="Select destination from left tree view."
-											readonly="readonly" id="selectedPath">
+											readonly="readonly" id="selectedPath" name="selectedPath">
 										</label>
 										<div class="note">In order to replace a file, select a
 											correlative one in tree view.</div>
@@ -213,12 +213,12 @@ th small {
 									<section>
 										<label class="label">Message</label> <label class="textarea">
 											<textarea rows="3"
-												placeholder="Leave a commit message(optional)."></textarea>
+												placeholder="Leave a commit message(optional)." id="message" name="message"></textarea>
 										</label>
 									</section>
 								</fieldset>
 								<footer>
-									<button id="importBtn" class="btn btn-primary">Import</button>
+									<button id="importBtn" class="btn btn-primary" >Import</button>
 								</footer>
 							</form>
 
@@ -330,6 +330,11 @@ th small {
  											$("#selectedPath").val(selectedPath);
  											e.stopPropagation();
  										});
+ 										
+ 										$("#importForm").submit(function(e){
+ 											e.preventDefault();
+ 											submitImportForm(this);
+ 										})
 									});
 
 						})

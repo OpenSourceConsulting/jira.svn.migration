@@ -5,10 +5,16 @@ package kr.osc.jira.svn.rest.controllers;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,10 +51,13 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.tmatesoft.svn.core.SVNException;
 import org.zeroturnaround.zip.commons.IOUtils;
 
@@ -69,6 +78,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 	private String password;
 	@Value("${server.os}")
 	private String serverOs;
+	@Value("${svn.tmp.dir}")
+	private String tmpUploadDir;
 
 	private HttpHost jiraHost;
 	private CredentialsProvider credsProvider;
@@ -195,6 +206,28 @@ public class JiraSVNMigrationController implements InitializingBean {
 	public SVNElement getSVNTree() throws SVNException {
 		return subversionRepo.getSVNTree();
 
+	}
+
+	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public String importSourceCodes(String selectedPath, String message, @RequestParam("file") MultipartFile file) throws IOException, SVNException {
+		//File uploadedFile = new File(tmpUploadDir + file.getName());
+		String uploadedFileName = tmpUploadDir + file.getOriginalFilename();
+		Path folder = Paths.get(uploadedFileName);
+		Path path = folder;
+		if (!Files.exists(folder, LinkOption.values())) {
+			path = Files.createFile(folder);
+		}
+		InputStream input = file.getInputStream();
+		Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
+		File sourceFile = path.toFile();
+		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, true);
+		if (file.getName().endsWith(".zip")) {
+
+		} else {
+
+		}
+		return "";
 	}
 
 	private String callAPI(HttpUriRequest request) throws Exception {

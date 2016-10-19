@@ -16,15 +16,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import org.tmatesoft.svn.core.SVNCommitInfo;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
+import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNCommitClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
@@ -38,7 +41,7 @@ public class SubversionRepository implements InitializingBean {
 	private String svnUsername;
 	@Value("${svn.pwd}")
 	private String svnPassword;
-	@Value("${svn.tmp.export.dir}")
+	@Value("${svn.tmp.dir}")
 	private String exportPathStr;
 	@Value("${svn.eol.style}")
 	private String eolStyle;
@@ -184,5 +187,17 @@ public class SubversionRepository implements InitializingBean {
 		File sourceDir = new File(destPath.getPath() + subDirSeparator + fileName);
 		ZipUtil.pack(sourceDir, new File(zipFile));
 		return zipFile;
+	}
+
+	public long importSourceCodes(File sourcePath, String destinationPath, String commitMessage, boolean isRecursive) throws SVNException {
+		SVNNodeKind nodeKind = svnRepository.checkPath(destinationPath, svnRepository.getLatestRevision());
+		if (nodeKind == SVNNodeKind.DIR) {
+			destinationPath = destinationPath + "/" + sourcePath.getName();
+		}
+		SVNURL dstUrl = SVNURL.parseURIEncoded(destinationPath);
+
+		SVNCommitClient commitClient = clientManager.getCommitClient();
+		SVNCommitInfo commitInfo = commitClient.doImport(sourcePath, dstUrl, commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
+		return commitInfo.getNewRevision();
 	}
 }
