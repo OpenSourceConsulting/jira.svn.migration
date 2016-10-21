@@ -216,6 +216,10 @@ public class JiraSVNMigrationController implements InitializingBean {
 	public SimpleJsonResponse importSourceCodes(SimpleJsonResponse json, String selectedPath, String message, @RequestParam("file") MultipartFile file)
 			throws IOException, SVNException {
 		//File uploadedFile = new File(tmpUploadDir + file.getName());
+		File uploadDir = new File(tmpUploadDir);
+		if (!uploadDir.exists()) {
+			uploadDir.mkdir();
+		}
 		String uploadedFileName = tmpUploadDir + file.getOriginalFilename();
 		Path folder = Paths.get(uploadedFileName);
 		Path path = folder;

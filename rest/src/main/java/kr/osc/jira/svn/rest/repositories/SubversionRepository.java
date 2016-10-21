@@ -221,6 +221,7 @@ public class SubversionRepository implements InitializingBean {
 			sources.add(sourcePath);
 		} else if (kind == SVNNodeKind.NONE) {
 			commitInfo = commitClient.doImport(sourcePath, dstUrl, commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
+			sourcePath.delete();
 		}
 		if (kind == SVNNodeKind.DIR || kind == SVNNodeKind.FILE) {
 			List<SVNURL> deletingUrls = new ArrayList<SVNURL>();
@@ -236,8 +237,11 @@ public class SubversionRepository implements InitializingBean {
 			}
 			for (int i = 0; i < importSVNURLs.size(); i++) {
 				commitInfo = commitClient.doImport(sources.get(i), importSVNURLs.get(i), commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
+				sources.get(i).delete();
 			}
 		}
+		//delete uploaded file from tmp dir
+
 		return commitInfo == null ? -1 : commitInfo.getNewRevision();
 	}
 
