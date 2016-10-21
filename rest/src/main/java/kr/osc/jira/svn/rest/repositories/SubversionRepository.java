@@ -9,6 +9,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.net.ssl.SNIHostName;
+import javax.swing.event.ListSelectionEvent;
+
 import kr.osc.jira.svn.rest.models.SVNElement;
 
 import org.apache.commons.collections.ListUtils;
@@ -41,8 +44,10 @@ public class SubversionRepository implements InitializingBean {
 	private String svnUsername;
 	@Value("${svn.pwd}")
 	private String svnPassword;
-	@Value("${svn.tmp.dir}")
-	private String exportPathStr;
+	@Value("${svn.tmp.download.dir}")
+	private String tmpDownloadDir;
+	@Value("${svn.tmp.upload.dir}")
+	private String tmpUploadDir;
 	@Value("${svn.eol.style}")
 	private String eolStyle;
 	@Value("${svn.root.dir}")
@@ -63,7 +68,7 @@ public class SubversionRepository implements InitializingBean {
 		svnRepository = SVNRepositoryFactory.create(svnUrl);
 		svnRepository.setAuthenticationManager(authManager);
 		clientManager.setAuthenticationManager(authManager);
-		destPath = new File(exportPathStr);
+		destPath = new File(tmpDownloadDir);
 
 	}
 
@@ -189,15 +194,57 @@ public class SubversionRepository implements InitializingBean {
 		return zipFile;
 	}
 
-	public long importSourceCodes(File sourcePath, String destinationPath, String commitMessage, boolean isRecursive) throws SVNException {
-		SVNNodeKind nodeKind = svnRepository.checkPath(destinationPath, svnRepository.getLatestRevision());
-		if (nodeKind == SVNNodeKind.DIR) {
-			destinationPath = destinationPath + "/" + sourcePath.getName();
-		}
-		SVNURL dstUrl = SVNURL.parseURIEncoded(destinationPath);
-
+	public long importSourceCodes(File sourcePath, String destinationPath, String commitMessage, boolean isUnzip, boolean isRecursive) throws SVNException {
 		SVNCommitClient commitClient = clientManager.getCommitClient();
-		SVNCommitInfo commitInfo = commitClient.doImport(sourcePath, dstUrl, commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
-		return commitInfo.getNewRevision();
+		SVNURL dstUrl = SVNURL.parseURIEncoded(destinationPath);
+		SVNNodeKind kind = checkPath(dstUrl);
+		SVNCommitInfo commitInfo = null;
+		List<SVNURL> importSVNURLs = new ArrayList<SVNURL>();
+		List<File> sources = new ArrayList<File>();
+		if (kind == SVNNodeKind.DIR) {
+			//import a foder with multiple files to dir
+			if (sourcePath.getName().endsWith(".zip") && isUnzip) {
+				//TODO: do next
+				//				File unzipDir = new File(tmpUploadDir);
+				//				ZipUtil.unpack(sourcePath, unzipDir);
+				//				for (String l : unzipDir.list()) {
+				//					System.out.println("File:" + l);
+				//				}
+			} else {
+				//import single file to dir
+				importSVNURLs.add(dstUrl.appendPath(sourcePath.getName(), false));
+				sources.add(sourcePath);
+			}
+
+		} else if (kind == SVNNodeKind.FILE) {
+			importSVNURLs.add(dstUrl);
+			sources.add(sourcePath);
+		} else if (kind == SVNNodeKind.NONE) {
+			commitInfo = commitClient.doImport(sourcePath, dstUrl, commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
+		}
+		if (kind == SVNNodeKind.DIR || kind == SVNNodeKind.FILE) {
+			List<SVNURL> deletingUrls = new ArrayList<SVNURL>();
+			for (SVNURL u : importSVNURLs) {
+				if (checkPath(u) != SVNNodeKind.UNKNOWN && checkPath(u) != SVNNodeKind.NONE) {
+					deletingUrls.add(u);
+				}
+			}
+			SVNURL[] urls = new SVNURL[deletingUrls.size()];
+			urls = deletingUrls.toArray(urls);
+			if (urls.length > 0) {
+				commitClient.doDelete(urls, "[Deleted]" + commitMessage);
+			}
+			for (int i = 0; i < importSVNURLs.size(); i++) {
+				commitInfo = commitClient.doImport(sources.get(i), importSVNURLs.get(i), commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
+			}
+		}
+		return commitInfo == null ? -1 : commitInfo.getNewRevision();
+	}
+
+	private SVNNodeKind checkPath(SVNURL path) throws SVNException {
+		SVNRepository repo = SVNRepositoryFactory.create(path);
+		ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(svnUsername, svnPassword.toCharArray());
+		repo.setAuthenticationManager(authManager);
+		return repo.checkPath("", -1);
 	}
 }

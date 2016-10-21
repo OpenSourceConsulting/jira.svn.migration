@@ -87,7 +87,7 @@ function generateSVNTree(treeId, callback) {
 	var url = "/rest/api/svn/tree";
 	$.get(url, function(json) {
 
-		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>'
+		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
 				+ json.resource + '</span>';
 		rootNode += "<span class='hidden'>" + json.url + "</span>";
 		var childNodes = "<ul>"
@@ -108,12 +108,14 @@ function listChildNodes(childNodes) {
 	}
 	$.each(childNodes, function(k, v) {
 		tooltip = "Resource:" + v.resource + "\n" + "Last Change Date:"
-				+ v.lastChanged + "\n" + "Last Author:" + v.lastAuthor;
+				+ v.lastChangedStr + "\n" + "Last Author:" + v.lastAuthor
+				+ "\n" + "Revision:" + v.revision;
+		;
 		var cls = "fa fa-lg "
 		if (v.type === "dir") {
 			cls += "fa-folder";
 			result += '<li style="display:none"><span title="' + tooltip
-					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
+					+ '"><i class="' + cls + '"></i>&nbsp;' + v.resource + '\t'
 					+ v.revision + '</span>';
 			result += "<span class='hidden'>" + v.url + "</span>";
 			if (v.childNodes !== null) {
@@ -124,7 +126,7 @@ function listChildNodes(childNodes) {
 		} else if (v.type === "file") {
 			cls += "fa-file-code-o";
 			result += '<li style="display:none"><span title="' + tooltip
-					+ '"><i class="' + cls + '"></i>' + v.resource + '\t'
+					+ '"><i class="' + cls + '"></i>&nbsp;' + v.resource + '\t'
 					+ v.revision + '</span>';
 			result += "<span class='hidden'>" + v.url + "</span>";
 		}
@@ -134,24 +136,59 @@ function listChildNodes(childNodes) {
 }
 
 function submitImportForm() {
+	var submit = false;
+	var selectPathType = $("#selectedType").val();
+	if (selectPathType === "file") {
+		$("#message-dialog").attr("title", "Warning");
+		$("#message-dialog")
+				.text(
+						"You are selecting a file on subversion. It will be deleted and replaced to the uploaded file.");
+		$("#message-dialog").dialog({
+			modal : true,
+			buttons : {
+				Ok : function() {
+					submit = true;
+					$(this).dialog("close");
+					doSubmit();
+				},
+				Cancel : function() {
+					submit = false;
+					$(this).dialog("close");
+				}
+			}
+		});
+	} else {
+		doSubmit();
+	}
+}
+
+function doSubmit() {
 	var formData = new FormData();
-	formData.append("selectedPath",$("#selectedPath").val());
-	formData.append("message",$("#message").val());
-	formData.append("file",$("#file")[0].files[0]);
+	formData.append("selectedPath", $("#selectedPath").val());
+	formData.append("message", $("#message").val());
+	formData.append("file", $("#file")[0].files[0]);
 	var url = "/rest/api/svn/import";
 	$.ajax({
 		type : "POST",
 		url : url,
-		data: formData,
-		processData: false,
-		contentType: false,
-		enctype:'multipart/form-data',
-		success : function() {
-			alert("submitted")
-		},
-		failure : function(e) {
-			alert(e);
-
+		data : formData,
+		processData : false,
+		contentType : false,
+		enctype : 'multipart/form-data',
+		success : function(json) {
+			if (json.success) {
+				$("#message-dialog").attr("title", "Information");
+				$("#message-dialog").text("Import files successfully.");
+				$("#message-dialog").dialog({
+					modal : true,
+					buttons : {
+						Ok : function() {
+							$(this).dialog("close");
+							window.location.reload();
+						}
+					}
+				});
+			}
 		}
 	});
 }

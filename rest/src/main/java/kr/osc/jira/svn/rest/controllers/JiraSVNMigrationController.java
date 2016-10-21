@@ -23,6 +23,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import kr.osc.jira.svn.common.model.GridJsonResponse;
+import kr.osc.jira.svn.common.model.SimpleJsonResponse;
 import kr.osc.jira.svn.rest.models.Commit;
 import kr.osc.jira.svn.rest.models.Issue;
 import kr.osc.jira.svn.rest.models.Project;
@@ -78,7 +79,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 	private String password;
 	@Value("${server.os}")
 	private String serverOs;
-	@Value("${svn.tmp.dir}")
+	@Value("${svn.tmp.upload.dir}")
 	private String tmpUploadDir;
 
 	private HttpHost jiraHost;
@@ -139,7 +140,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 		String response = callAPI(httpget);
 		JSONObject object = new JSONObject(response);
 		JSONArray array = object.getJSONArray("issues");
-		List<Issue> issues = new ArrayList();
+		List<Issue> issues = new ArrayList<Issue>();
 		for (int i = 0; i < array.length(); i++) {
 			JSONObject obj = array.getJSONObject(i);
 			int id = obj.getInt("id");
@@ -158,7 +159,9 @@ public class JiraSVNMigrationController implements InitializingBean {
 			} catch (Exception e) {
 
 			}
-			List<Commit> commits = commitRepo.search("key", key);
+			String[] keywords = new String[1];
+			keywords[0] = key;
+			List<Commit> commits = commitRepo.search("key", keywords);
 			issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
 		}
 		json.setList(issues);
@@ -166,11 +169,11 @@ public class JiraSVNMigrationController implements InitializingBean {
 		return json;
 	}
 
-	@RequestMapping("/api/commits")
-	@ResponseBody
-	public List<Commit> getCommits(String field, String value) throws IOException {
-		return commitRepo.search(field, value);
-	}
+	//	@RequestMapping("/api/commits")
+	//	@ResponseBody
+	//	public List<Commit> getCommits(String field, String value) throws IOException {
+	//		return commitRepo.search(field, value);
+	//	}
 
 	@RequestMapping("/api/svn/export")
 	@ResponseBody
@@ -210,7 +213,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public String importSourceCodes(String selectedPath, String message, @RequestParam("file") MultipartFile file) throws IOException, SVNException {
+	public SimpleJsonResponse importSourceCodes(SimpleJsonResponse json, String selectedPath, String message, @RequestParam("file") MultipartFile file)
+			throws IOException, SVNException {
 		//File uploadedFile = new File(tmpUploadDir + file.getName());
 		String uploadedFileName = tmpUploadDir + file.getOriginalFilename();
 		Path folder = Paths.get(uploadedFileName);
@@ -221,13 +225,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 		InputStream input = file.getInputStream();
 		Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
 		File sourceFile = path.toFile();
-		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, true);
-		if (file.getName().endsWith(".zip")) {
-
-		} else {
-
-		}
-		return "";
+		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, false, true);
+		return json;
 	}
 
 	private String callAPI(HttpUriRequest request) throws Exception {
@@ -240,11 +239,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 		System.out.println("Executing request " + request.getRequestLine());
 		HttpResponse response = httpclient.execute(request, context);
-		System.out.println("----------------------------------------");
-		System.out.println(response.getStatusLine());
 
 		String resJson = EntityUtils.toString(response.getEntity());
-		System.out.println(resJson);
 
 		return resJson;
 	}

@@ -2,7 +2,7 @@
 <html lang="en-us">
 <head>
 <meta charset="utf-8">
-<title>SmartAdmin</title>
+<title>Subversion Migration - SVN Upload</title>
 <meta name="description" content="">
 <meta name="author" content="">
 
@@ -187,7 +187,8 @@ th small {
 						</div>
 						<div class="col-md-9">
 
-							<form class="smart-form" id="importForm" enctype ="multipart/form-data"> 
+							<form class="smart-form" id="importForm"
+								enctype="multipart/form-data">
 								<fieldset>
 									<section>
 										<label class="label">Selected path</label> <label
@@ -195,7 +196,7 @@ th small {
 											class="icon-prepend fa fa-folder-open"></i><input type="text"
 											placeholder="Select destination from left tree view."
 											readonly="readonly" id="selectedPath" name="selectedPath">
-										</label>
+										</label> <input type="hidden" id="selectedType" />
 										<div class="note">In order to replace a file, select a
 											correlative one in tree view.</div>
 									</section>
@@ -213,12 +214,13 @@ th small {
 									<section>
 										<label class="label">Message</label> <label class="textarea">
 											<textarea rows="3"
-												placeholder="Leave a commit message(optional)." id="message" name="message"></textarea>
+												placeholder="Leave a commit message(optional)." id="message"
+												name="message"></textarea>
 										</label>
 									</section>
 								</fieldset>
 								<footer>
-									<button id="importBtn" class="btn btn-primary" >Import</button>
+									<button id="importBtn" class="btn btn-primary">Import</button>
 								</footer>
 							</form>
 
@@ -309,37 +311,75 @@ th small {
 												.addClass('parent_li')
 												.attr('role', 'treeitem')
 												.find(' > span')
-												.on('click',
+												.on(
+														'click',
 														function(e) {
-															var children = $(this).parent('li.parent_li').find(' > ul > li');
-															if (children.is(':visible')) {
-																children.hide('fast');
-																$(this).find(' > i').removeClass().addClass('fa fa-folder');
+															var children = $(
+																	this)
+																	.parent(
+																			'li.parent_li')
+																	.find(
+																			' > ul > li');
+															if (children
+																	.is(':visible')) {
+																children
+																		.hide('fast');
+																$(this)
+																		.find(
+																				' > i')
+																		.removeClass()
+																		.addClass(
+																				'fa fa-folder');
 															} else {
-																children.show('fast');
-																if(!$(this).find(' > i').hasClass('fa-database')){ //dont change in root element
-																	$(this).find(' > i').removeClass().addClass('fa fa-folder-open');
+																children
+																		.show('fast');
+																if (!$(this)
+																		.find(
+																				' > i')
+																		.hasClass(
+																				'fa-database')) { //dont change in root element
+																	$(this)
+																			.find(
+																					' > i')
+																			.removeClass()
+																			.addClass(
+																					'fa fa-folder-open');
 																}
 															}
 															//e.stopPropagation();
-														
+
 														});
-										
- 										$('.tree > ul').find('li').on('click',function (e){
- 											var selectedPath = $(this).find(' > span.hidden').text();
- 											$("#selectedPath").val(selectedPath);
- 											e.stopPropagation();
- 										});
- 										
- 										$("#importForm").submit(function(e){
- 											e.preventDefault();
- 											submitImportForm(this);
- 										})
+
+										$('.tree > ul')
+												.find('li')
+												.on(
+														'click',
+														function(e) {
+															var selectedPath = $(
+																	this)
+																	.find(
+																			' > span.hidden')
+																	.text();
+															$("#selectedPath")
+																	.val(selectedPath);
+															if($(this).find(' > span > i').hasClass("fa-file-code-o")){
+																$("#selectedType").val("file");	
+															}else{
+																$("#selectedType").val("dir");
+															}
+															
+															e.stopPropagation();
+														});
+
+										$("#importForm").submit(function(e) {
+											e.preventDefault();
+											submitImportForm(this);
+										})
 									});
 
 						})
 	</script>
-	<div id="message" title="Warning"></div>
+	<div id="message-dialog"></div>
 </body>
 
 </html>

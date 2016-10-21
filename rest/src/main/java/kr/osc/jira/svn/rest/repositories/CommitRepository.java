@@ -3,6 +3,7 @@ package kr.osc.jira.svn.rest.repositories;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import kr.osc.jira.svn.rest.models.Commit;
@@ -18,34 +19,29 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 @Repository(value = "commitRepository")
-public class CommitRepository implements InitializingBean {
+public class CommitRepository {
 	@Value("${jira.svn.base.dir}")
 	private String path;
-	IndexSearcher searcher;
 
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		//path = "C:\\Program Files\\Atlassian\\Application Data\\JIRA\\caches\\indexes\\plugins\\atlassian-subversion-revisions";
+	public List<Commit> search(String field, String[] keywords) throws IOException {
 		File file = new File(path);
 		Directory index = FSDirectory.open(file);
 		IndexReader reader = DirectoryReader.open(index);
-		searcher = new IndexSearcher(reader);
-	}
-
-	public List<Commit> search(String field, String[] keywords) throws IOException {
+		IndexSearcher searcher = new IndexSearcher(reader);
 		List<Commit> results = new ArrayList<Commit>();
 		for (String keyword : keywords) {
-			results.addAll(this.search(field, keyword));
+			results.addAll(this.search(searcher, field, keyword));
 		}
+		reader.close();
+		index.close();
 		return results;
 	}
 
-	public List<Commit> search(String field, String keyword) throws IOException {
+	private List<Commit> search(IndexSearcher searcher, String field, String keyword) throws IOException {
 		List<Commit> results = new ArrayList<Commit>();
 		Query q = new TermQuery(new Term(field, keyword));
 		//search		
@@ -60,6 +56,7 @@ public class CommitRepository implements InitializingBean {
 			results.add(new Commit(Integer.parseInt(d.get("revision")), d.get("key"), d.get("author"), d.get("message").trim(), d.get("project"), d
 					.get("repository")));
 		}
+
 		return results;
 	}
 }
