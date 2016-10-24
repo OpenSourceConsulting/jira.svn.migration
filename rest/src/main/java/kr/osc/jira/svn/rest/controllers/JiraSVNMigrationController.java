@@ -60,6 +60,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.tmatesoft.svn.core.SVNException;
+import org.zeroturnaround.zip.commons.FileUtils;
 import org.zeroturnaround.zip.commons.IOUtils;
 
 /**
@@ -197,9 +198,13 @@ public class JiraSVNMigrationController implements InitializingBean {
 				response.setContentType("application/zip");
 				String fileName = zipFile.substring(zipFile.lastIndexOf(subDirSeparator) + 1);
 				response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
-				InputStream is = new FileInputStream(new File(zipFile));
+				File f = new File(zipFile);
+				InputStream is = new FileInputStream(f);
 				IOUtils.copy(is, response.getOutputStream());
 				response.flushBuffer();
+				//delete on server
+				FileUtils.deleteQuietly(f);
+
 			}
 		}
 	}
@@ -213,8 +218,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public SimpleJsonResponse importSourceCodes(SimpleJsonResponse json, String selectedPath, String message, @RequestParam("file") MultipartFile file)
-			throws IOException, SVNException {
+	public SimpleJsonResponse importSourceCodes(SimpleJsonResponse json, String selectedPath, boolean isExtract, String message,
+			@RequestParam("file") MultipartFile file) throws IOException, SVNException {
 		//File uploadedFile = new File(tmpUploadDir + file.getName());
 		File uploadDir = new File(tmpUploadDir);
 		if (!uploadDir.exists()) {
@@ -229,7 +234,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 		InputStream input = file.getInputStream();
 		Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
 		File sourceFile = path.toFile();
-		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, false, true);
+		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, isExtract, true);
 		return json;
 	}
 

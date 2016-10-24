@@ -183,12 +183,13 @@ th small {
 				<div class="well">
 					<div class="row show-grid">
 						<div class="col-sm-3" style="height: 400px;">
-							<div class="tree" id="svnTree" style="overflow: scroll;height: 400px;"></div>
+							<div class="tree" id="svnTree"
+								style="overflow: scroll; height: 400px;"></div>
 						</div>
 						<div class="col-md-9" style="height: 400px;">
 
 							<form class="smart-form" id="importForm"
-								enctype="multipart/form-data" >
+								enctype="multipart/form-data">
 								<fieldset>
 									<section>
 										<label class="label">Selected path</label> <label
@@ -210,6 +211,13 @@ th small {
 												placeholder="Browse a *.zip file to import a directory."
 												readonly="">
 										</div>
+									</section>
+									<section>
+										<label class="checkbox"> <input type="checkbox"
+											name="checkbox" id="extractZip"> <i></i>Extract and
+											upload all contained files and folders if the *.zip file is
+											uploaded.
+										</label>
 									</section>
 									<section>
 										<label class="label">Message</label> <label class="textarea">
@@ -361,13 +369,24 @@ th small {
 																			' > span.hidden')
 																	.text();
 															$("#selectedPath")
-																	.val(selectedPath);
-															if($(this).find(' > span > i').hasClass("fa-file-code-o")){
-																$("#selectedType").val("file");	
-															}else{
-																$("#selectedType").val("dir");
+																	.val(
+																			selectedPath);
+															if ($(this)
+																	.find(
+																			' > span > i')
+																	.hasClass(
+																			"fa-file-code-o")) {
+																$(
+																		"#selectedType")
+																		.val(
+																				"file");
+															} else {
+																$(
+																		"#selectedType")
+																		.val(
+																				"dir");
 															}
-															
+
 															e.stopPropagation();
 														});
 

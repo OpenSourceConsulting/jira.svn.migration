@@ -1,8 +1,10 @@
 package kr.osc.jira.svn.rest.repositories;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -35,6 +37,7 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 import org.zeroturnaround.zip.ZipUtil;
+import org.zeroturnaround.zip.commons.FileUtils;
 
 @Repository(value = "subversionRepository")
 public class SubversionRepository implements InitializingBean {
@@ -126,8 +129,9 @@ public class SubversionRepository implements InitializingBean {
 	 * @param dept
 	 * @return
 	 * @throws SVNException
+	 * @throws IOException
 	 */
-	public String export(String pegRev, String rev, boolean overwrite) throws SVNException {
+	public String export(String pegRev, String rev, boolean overwrite) throws SVNException, IOException {
 
 		SVNRevision pegRevision = pegRev == null ? SVNRevision.HEAD : SVNRevision.parse(pegRev);
 		SVNRevision revision = rev == null ? SVNRevision.HEAD : SVNRevision.parse(rev);
@@ -191,10 +195,16 @@ public class SubversionRepository implements InitializingBean {
 		String zipFile = destPath.getPath() + subDirSeparator + fileName + ".zip";
 		File sourceDir = new File(destPath.getPath() + subDirSeparator + fileName);
 		ZipUtil.pack(sourceDir, new File(zipFile));
+		FileUtils.deleteQuietly(sourceDir);
 		return zipFile;
 	}
 
 	public long importSourceCodes(File sourcePath, String destinationPath, String commitMessage, boolean isUnzip, boolean isRecursive) throws SVNException {
+		String subDirSeparator = "/";
+		if (serverOs.equals("windows")) {
+			subDirSeparator = "\\";
+		}
+		File unzipDir = null;
 		SVNCommitClient commitClient = clientManager.getCommitClient();
 		SVNURL dstUrl = SVNURL.parseURIEncoded(destinationPath);
 		SVNNodeKind kind = checkPath(dstUrl);
@@ -204,12 +214,13 @@ public class SubversionRepository implements InitializingBean {
 		if (kind == SVNNodeKind.DIR) {
 			//import a foder with multiple files to dir
 			if (sourcePath.getName().endsWith(".zip") && isUnzip) {
-				//TODO: do next
-				//				File unzipDir = new File(tmpUploadDir);
-				//				ZipUtil.unpack(sourcePath, unzipDir);
-				//				for (String l : unzipDir.list()) {
-				//					System.out.println("File:" + l);
-				//				}
+				unzipDir = new File(tmpUploadDir + sourcePath.getName().replace(".zip", ""));
+				ZipUtil.unpack(sourcePath, unzipDir);
+				for (String l : unzipDir.list()) {
+					importSVNURLs.add(dstUrl.appendPath(l, false));
+					sources.add(new File(unzipDir.getPath() + subDirSeparator + l));
+				}
+
 			} else {
 				//import single file to dir
 				importSVNURLs.add(dstUrl.appendPath(sourcePath.getName(), false));
@@ -237,11 +248,13 @@ public class SubversionRepository implements InitializingBean {
 			}
 			for (int i = 0; i < importSVNURLs.size(); i++) {
 				commitInfo = commitClient.doImport(sources.get(i), importSVNURLs.get(i), commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
-				sources.get(i).delete();
 			}
 		}
 		//delete uploaded file from tmp dir
-
+		sourcePath.delete();
+		if (unzipDir != null) {
+			FileUtils.deleteQuietly(unzipDir);
+		}
 		return commitInfo == null ? -1 : commitInfo.getNewRevision();
 	}
 

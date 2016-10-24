@@ -2,12 +2,18 @@ function getProjectList(selectId) {
 	var select = $("#" + selectId);
 	var url = "/rest/api/projects";
 	var options = "<option value='0' selected>--Select project--</option>";
-	$.get(url, function(json) {
-		$.each(json.list, function(k, v) {
-			options += "<option value='" + v.id + "'>" + v.key + " - " + v.name
-					+ "</option>";
-		})
-		select.html(options);
+	$.ajax({
+		url : url,
+		success : function(json) {
+			$.each(json.list, function(k, v) {
+				options += "<option value='" + v.id + "'>" + v.key + " - "
+						+ v.name + "</option>";
+			})
+			select.html(options);
+		},
+		error : function(e) {
+			alert(e.msg);
+		}
 	});
 }
 
@@ -167,6 +173,7 @@ function doSubmit() {
 	formData.append("selectedPath", $("#selectedPath").val());
 	formData.append("message", $("#message").val());
 	formData.append("file", $("#file")[0].files[0]);
+	formData.append("isExtract", $("#extractZip").is(":checked"));
 	var url = "/rest/api/svn/import";
 	$.ajax({
 		type : "POST",
