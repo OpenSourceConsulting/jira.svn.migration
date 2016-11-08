@@ -105,7 +105,13 @@ function generateSVNTree(treeId, callback) {
 		callback();
 	});
 }
-
+function loadChildNodes(parentPath, callback) {
+	var url = "/rest/api/svn/tree/load?parent=" + parentPath;
+	$.get(url, function(json) {
+		var childNodes = listChildNodes(json.list);
+		callback(childNodes);
+	});
+}
 function listChildNodes(childNodes) {
 	var tooltip = "";
 	var result = "";
@@ -120,9 +126,9 @@ function listChildNodes(childNodes) {
 		var cls = "fa fa-lg "
 		if (v.type === "dir") {
 			cls += "fa-folder";
-			result += '<li style="display:none"><span title="' + tooltip
-					+ '"><i class="' + cls + '"></i>&nbsp;' + v.resource + '\t'
-					+ v.revision + '</span>';
+			result += '<li><span title="' + tooltip
+					+ '" expanded="false"><i  class="' + cls + '"></i>&nbsp;'
+					+ v.resource + '\t' + v.revision + '</span>';
 			result += "<span class='hidden'>" + v.url + "</span>";
 			if (v.childNodes !== null) {
 				result += "<ul>";
@@ -131,9 +137,9 @@ function listChildNodes(childNodes) {
 			}
 		} else if (v.type === "file") {
 			cls += "fa-file-code-o";
-			result += '<li style="display:none"><span title="' + tooltip
-					+ '"><i class="' + cls + '"></i>&nbsp;' + v.resource + '\t'
-					+ v.revision + '</span>';
+			result += '<li><span title="' + tooltip + '"><i class="' + cls
+					+ '"></i>&nbsp;' + v.resource + '\t' + v.revision
+					+ '</span>';
 			result += "<span class='hidden'>" + v.url + "</span>";
 		}
 
@@ -198,4 +204,40 @@ function doSubmit() {
 			}
 		}
 	});
+}
+
+function addReloadAction(parentSelector) {
+	$(parentSelector).find(".fa-folder").parent().css("cursor", "pointer");
+	$(parentSelector).find('ul').attr('role', 'group');
+	$(parentSelector).find(' ul > li').find('li:has(ul)').addClass('parent_li')
+			.attr('role', 'treeitem');
+	$(parentSelector).find('ul > li').on('click', function(e) {
+		var selectedPath = $(this).find("span.hidden").text();
+		$("#selectedPath").val(selectedPath);
+		if ($(this).find(' > span > i').hasClass("fa-file-code-o")) {
+			$("#selectedType").val("file");
+		} else {
+			$("#selectedType").val("dir");
+		}
+		e.stopPropagation();
+	});
+
+	$(parentSelector).find(".fa-folder").parent().on("click", function() {
+		var parentPath = $(this).parent().find("span.hidden").text();
+		$(this).find(' > i').removeClass().addClass('fa fa-folder-open');
+		var parent = $(this).parent();
+		if (parent.find("ul[role='group']").length === 0) {
+			loadChildNodes(parentPath, function(childNodes) {
+				parent.append("<ul role='group'></ul>");
+				parent.find("ul[role='group']").html(childNodes);
+				addReloadAction(parent);
+			});
+		}
+	});
+	$(parentSelector).find(".fa-folder-open").parent().on("click", function() {
+		var parent = $(this).parent();
+		$(this).find(' > i').removeClass().addClass('fa fa-folder');
+		parent.find("ul[role='group']").toggle();
+	})
+
 }

@@ -2,21 +2,14 @@ package kr.osc.jira.svn.rest.repositories;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.net.ssl.SNIHostName;
-import javax.swing.event.ListSelectionEvent;
-
 import kr.osc.jira.svn.rest.models.SVNElement;
 
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +19,6 @@ import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNNodeKind;
-import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.io.SVNRepository;
@@ -166,7 +158,8 @@ public class SubversionRepository implements InitializingBean {
 			element.setResource(entry.getName());
 			if (entry.getKind() == SVNNodeKind.DIR) {
 				element.setType("dir");
-				element.setChildNodes(listEntries(repository, (path.equals("")) ? entry.getName() : path + "/" + entry.getName()));
+				//element.setChildNodes(listEntries(repository, (path.equals("")) ? entry.getName() : path + "/" + entry.getName()));
+				element.setChildNodes(null);
 			} else if (entry.getKind() == SVNNodeKind.FILE) {
 				element.setType("file");
 			}
@@ -185,6 +178,15 @@ public class SubversionRepository implements InitializingBean {
 		root.setUrl(rootUrl.toString());
 		root.setChildNodes(listEntries(svnRepository, ""));
 		return root;
+	}
+
+	public List<SVNElement> getSVNChildNodes(String parentPath) throws SVNException {
+		SVNURL url = SVNURL.parseURIEncoded(parentPath);
+		String subPath = parentPath.substring(svnRepository.getLocation().toString().length());
+		if (checkPath(url) == SVNNodeKind.DIR) {
+			return listEntries(svnRepository, subPath);
+		}
+		return null;
 	}
 
 	private String createZipFile(String fileName) {
@@ -264,4 +266,5 @@ public class SubversionRepository implements InitializingBean {
 		repo.setAuthenticationManager(authManager);
 		return repo.checkPath("", -1);
 	}
+
 }

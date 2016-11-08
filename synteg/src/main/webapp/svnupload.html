@@ -150,7 +150,7 @@ th small {
 	<aside id="left-panel">
 		<nav>
 			<ul>
-				<li><a href="/rest/" title="Dashboard"><i
+<li><a href="/rest/" title="Dashboard"><i
 						class="fa fa-lg fa-fw fa-home"></i> <span class="menu-item-parent">Dashboard</span></a>
 				</li>
 				<li><a href="/rest/svnupload.html" title="Dashboard"><i
@@ -307,96 +307,25 @@ th small {
 						function() {
 
 							//gen svn tree view
-							generateSVNTree(
-									"svnTree",
-									function() {
+							generateSVNTree("svnTree", function() {
 										// PAGE RELATED SCRIPTS
 										$('.tree > ul').attr('role', 'tree')
 												.find('ul').attr('role',
 														'group');
-										$('.tree > ul')
+										$('.tree > ul > li')
 												.find('li:has(ul)')
 												.addClass('parent_li')
-												.attr('role', 'treeitem')
-												.find(' > span')
-												.on(
-														'click',
-														function(e) {
-															var children = $(
-																	this)
-																	.parent(
-																			'li.parent_li')
-																	.find(
-																			' > ul > li');
-															if (children
-																	.is(':visible')) {
-																children
-																		.hide('fast');
-																$(this)
-																		.find(
-																				' > i')
-																		.removeClass()
-																		.addClass(
-																				'fa fa-folder');
-															} else {
-																children
-																		.show('fast');
-																if (!$(this)
-																		.find(
-																				' > i')
-																		.hasClass(
-																				'fa-database')) { //dont change in root element
-																	$(this)
-																			.find(
-																					' > i')
-																			.removeClass()
-																			.addClass(
-																					'fa fa-folder-open');
-																}
-															}
-															//e.stopPropagation();
-
-														});
-
-										$('.tree > ul')
-												.find('li')
-												.on(
-														'click',
-														function(e) {
-															var selectedPath = $(
-																	this)
-																	.find(
-																			' > span.hidden')
-																	.text();
-															$("#selectedPath")
-																	.val(
-																			selectedPath);
-															if ($(this)
-																	.find(
-																			' > span > i')
-																	.hasClass(
-																			"fa-file-code-o")) {
-																$(
-																		"#selectedType")
-																		.val(
-																				"file");
-															} else {
-																$(
-																		"#selectedType")
-																		.val(
-																				"dir");
-															}
-
-															e.stopPropagation();
-														});
-
-										$("#importForm").submit(function(e) {
-											e.preventDefault();
-											submitImportForm(this);
-										})
+												.attr('role', 'treeitem');
+										//show tree view
+										$('.tree').find('li:has(ul)').find(' > ul > li').show("fast");
+										addReloadAction(".tree");
 									});
-
-						})
+							
+							$("#importForm").submit(function(e) {
+								e.preventDefault();
+								submitImportForm(this);
+							});
+						});
 	</script>
 	<div id="message-dialog"></div>
 </body>

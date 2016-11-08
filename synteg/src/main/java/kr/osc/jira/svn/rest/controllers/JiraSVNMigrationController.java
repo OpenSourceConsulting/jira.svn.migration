@@ -5,7 +5,6 @@ package kr.osc.jira.svn.rest.controllers;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -15,8 +14,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -213,6 +210,14 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@ResponseBody
 	public SVNElement getSVNTree() throws SVNException {
 		return subversionRepo.getSVNTree();
+
+	}
+
+	@RequestMapping("/api/svn/tree/load")
+	@ResponseBody
+	public GridJsonResponse getSVNTree(GridJsonResponse json, String parent) throws SVNException {
+		json.setList(subversionRepo.getSVNChildNodes(parent));
+		return json;
 
 	}
 
