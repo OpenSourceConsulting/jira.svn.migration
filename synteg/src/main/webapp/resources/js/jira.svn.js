@@ -176,7 +176,7 @@ function submitImportForm() {
 }
 
 function doSubmit() {
-	if ($("#selectedPath").val()==="") {
+	if ($("#selectedPath").val() === "") {
 		alert("Please select path.");
 		return;
 	}
@@ -191,28 +191,30 @@ function doSubmit() {
 	formData.append("file", $("#file")[0].files[0]);
 	formData.append("isExtract", $("#extractZip").is(":checked"));
 	var url = CONTEXT_PATH + "/api/svn/import";
-	$.ajax({
-		type : "POST",
-		url : url,
-		data : formData,
-		processData : false,
-		contentType : false,
-		enctype : 'multipart/form-data',
-		success : function(json) {
-			if (json.success) {
-				$("#message-dialog").attr("title", "Information");
-				$("#message-dialog").text("Import files successfully.");
-				$("#message-dialog").dialog({
-					modal : true,
-					buttons : {
-						Ok : function() {
-							$(this).dialog("close");
-							window.location.reload();
+	Pace.track(function() { //for progress bar
+		$.ajax({
+			type : "POST",
+			url : url,
+			data : formData,
+			processData : false,
+			contentType : false,
+			enctype : 'multipart/form-data',
+			success : function(json) {
+				if (json.success) {
+					$("#message-dialog").attr("title", "Information");
+					$("#message-dialog").text("Import files successfully.");
+					$("#message-dialog").dialog({
+						modal : true,
+						buttons : {
+							Ok : function() {
+								$(this).dialog("close");
+								window.location.reload();
+							}
 						}
-					}
-				});
+					});
+				}
 			}
-		}
+		});
 	});
 }
 

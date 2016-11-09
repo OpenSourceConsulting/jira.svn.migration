@@ -302,10 +302,21 @@ th small {
 	<script src="resources/js/jira.svn.js"></script>
 
 	<script type="text/javascript">
+	
 		$(document)
 				.ready(
 						function() {
-
+// 							paceOptions = {
+// 							   ajax: {
+// 							         trackMethods: ['GET', 'POST']
+// 							   }
+// 							}
+						$(document).ajaxStart(function() {
+							    $('body').addClass('loading');
+							});
+							$(document).ajaxStop(function() {
+							    $('body').removeClass('loading');
+							});
 							//gen svn tree view
 							generateSVNTree("svnTree", function() {
 										// PAGE RELATED SCRIPTS
