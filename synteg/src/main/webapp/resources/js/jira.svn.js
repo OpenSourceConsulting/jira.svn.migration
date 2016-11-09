@@ -225,20 +225,25 @@ function addReloadAction(parentSelector) {
 
 	$(parentSelector).find(".fa-folder").parent().on("click", function() {
 		var parentPath = $(this).parent().find("span.hidden").text();
-		$(this).find(' > i').removeClass().addClass('fa fa-folder-open');
 		var parent = $(this).parent();
+		var me = this;
 		if (parent.find("ul[role='group']").length === 0) {
 			loadChildNodes(parentPath, function(childNodes) {
 				parent.append("<ul role='group'></ul>");
 				parent.find("ul[role='group']").html(childNodes);
 				addReloadAction(parent);
 			});
+			$(me).find(' > i').removeClass().addClass('fa fa-folder-open');
 		}
+
 	});
+
 	$(parentSelector).find(".fa-folder-open").parent().on("click", function() {
 		var parent = $(this).parent();
-		$(this).find(' > i').removeClass().addClass('fa fa-folder');
-		parent.find("ul[role='group']").toggle();
+		if (parent.find("ul[role='group']").length > 0) {
+			parent.find("ul[role='group']").detach();
+			$(this).find(' > i').removeClass().addClass('fa fa-folder');
+		}
 	})
 
 }
