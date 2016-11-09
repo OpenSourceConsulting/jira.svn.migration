@@ -25,7 +25,6 @@ import kr.osc.jira.svn.rest.models.Commit;
 import kr.osc.jira.svn.rest.models.Issue;
 import kr.osc.jira.svn.rest.models.Project;
 import kr.osc.jira.svn.rest.models.SVNElement;
-import kr.osc.jira.svn.rest.repositories.CommitRepository;
 import kr.osc.jira.svn.rest.repositories.SubversionRepository;
 
 import org.apache.commons.lang3.StringUtils;
@@ -79,12 +78,13 @@ public class JiraSVNMigrationController implements InitializingBean {
 	private String serverOs;
 	@Value("${svn.tmp.upload.dir}")
 	private String tmpUploadDir;
+	@Value("${jira.svn.rest.url}")
+	private String jiraRestURL;
 
 	private HttpHost jiraHost;
 	private CredentialsProvider credsProvider;
 	private AuthCache authCache;
-	@Autowired
-	private CommitRepository commitRepo;
+
 	@Autowired
 	private SubversionRepository subversionRepo;
 
@@ -102,9 +102,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 	public GridJsonResponse getProjectList(GridJsonResponse json) throws Exception {
 		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/project")).build();
 		String response = callAPI(httpget);
-
 		JSONArray array = new JSONArray(response);
-		List<Project> projects = new ArrayList();
+		List<Project> projects = new ArrayList<Project>();
 		for (int i = 0; i < array.length(); i++) {
 			JSONObject obj = array.getJSONObject(i);
 			projects.add(new Project(obj.getString("id"), obj.getString("key"), obj.getString("name"), obj.getString("self")));
@@ -133,7 +132,6 @@ public class JiraSVNMigrationController implements InitializingBean {
 		}
 
 		jql = URLEncoder.encode(jql, "UTF-8");
-		System.out.println("jql:" + jql);
 		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/search?jql=" + jql + "&fields=" + fields)).build();
 		String response = callAPI(httpget);
 		JSONObject object = new JSONObject(response);
@@ -159,7 +157,9 @@ public class JiraSVNMigrationController implements InitializingBean {
 			}
 			String[] keywords = new String[1];
 			keywords[0] = key;
-			List<Commit> commits = commitRepo.search("key", keywords);
+
+			List<Commit> commits = getCommits("key", keywords);
+
 			issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
 		}
 		json.setList(issues);
@@ -175,8 +175,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping("/api/svn/export")
 	@ResponseBody
-	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws IOException, SVNException {
-		List<Commit> commits = commitRepo.search("key", issueKeys);
+	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws Exception {
+		List<Commit> commits = getCommits("key", issueKeys);
 		if (commits.size() == 0) {
 			subversionRepo.export(null, null, true);
 		} else {
@@ -259,4 +259,23 @@ public class JiraSVNMigrationController implements InitializingBean {
 		return resJson;
 	}
 
+	private List<Commit> getCommits(String field, String[] keywords) throws Exception {
+		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraRestURL)).addParameter("field", "key")
+				.addParameter("issueKeys", StringUtils.join(keywords, ",")).build();
+		List<Commit> commits = new ArrayList<Commit>();
+		String response = callAPI(httpget);
+		JSONArray array = new JSONArray(response);
+		for (int i = 0; i < array.length(); i++) {
+			JSONObject obj = array.getJSONObject(i);
+			int revision = obj.getInt("revision");
+			String key = obj.getString("key");
+			String author = obj.getString("author");
+			String message = obj.getString("message");
+			String project = obj.getString("project");
+			String repository = obj.getString("repository");
+
+			commits.add(new Commit(revision, key, author, message, project, repository));
+		}
+		return commits;
+	}
 }

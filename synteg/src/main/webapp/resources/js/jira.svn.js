@@ -1,6 +1,7 @@
+var CONTEXT_PATH = "/svninteg"
 function getProjectList(selectId) {
 	var select = $("#" + selectId);
-	var url = "/rest/api/projects";
+	var url = CONTEXT_PATH + "/api/projects";
 	var options = "<option value='0' selected>--Select project--</option>";
 	$.ajax({
 		url : url,
@@ -18,7 +19,7 @@ function getProjectList(selectId) {
 }
 
 function filterIssues(gridId, projectId, fromDate, toDate, fields) {
-	var url = "/rest/api/issues/filter";
+	var url = CONTEXT_PATH + "/api/issues/filter";
 	var data = [];
 	if (projectId == 0) { // maybe 0 or "0"
 		$("#message").text("Project is required");
@@ -83,14 +84,14 @@ function exportSourceCode(issueIds) {
 	if (issueKeys.length == 0) {
 		return;
 	} else {
-		var url = "/rest/api/svn/export";
+		var url = CONTEXT_PATH + "/api/svn/export";
 		window.location.href = url + "?issueKeys[]=" + issueKeys.join(",");
 	}
 }
 
 function generateSVNTree(treeId, callback) {
 	var tree = $("#" + treeId);
-	var url = "/rest/api/svn/tree";
+	var url = CONTEXT_PATH + "/api/svn/tree";
 	$.get(url, function(json) {
 
 		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
@@ -106,7 +107,7 @@ function generateSVNTree(treeId, callback) {
 	});
 }
 function loadChildNodes(parentPath, callback) {
-	var url = "/rest/api/svn/tree/load?parent=" + parentPath;
+	var url = CONTEXT_PATH + "/api/svn/tree/load?parent=" + parentPath;
 	$.get(url, function(json) {
 		var childNodes = listChildNodes(json.list);
 		callback(childNodes);
@@ -180,7 +181,7 @@ function doSubmit() {
 	formData.append("message", $("#message").val());
 	formData.append("file", $("#file")[0].files[0]);
 	formData.append("isExtract", $("#extractZip").is(":checked"));
-	var url = "/rest/api/svn/import";
+	var url = CONTEXT_PATH + "/api/svn/import";
 	$.ajax({
 		type : "POST",
 		url : url,
