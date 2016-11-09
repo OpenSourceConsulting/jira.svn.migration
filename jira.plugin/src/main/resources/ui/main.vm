@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <title>Synteg Configuration</title>
+    <meta name="decorator" content="atl.admin">
+    <script type="text/javascript">
+    	AJS.$("document").ready(function(){
+    		var result = "$result";
+    		if(result==="1"){
+    			alert("SVN Data Dir is updated.");
+    		}
+    	});
+    </script>
+  </head>
+  <body>
+  		<h1>Synteg Jira SVN Configuration</h1>
+	  	<form class="aui" action="/plugins/servlet/jira.svn/configuration" method="POST">
+	  		 <div class="field-group">
+	  		 	<label for="current_dir">Current SVN Dir:</label>
+	  		 	<span style="color:#707070">$currentDir</span>
+		    </div>
+		    <div class="field-group">
+	  		 	<label for="issue-list">New SVN Dir</label>
+			    <input type="text id="new_dir" name="newDir" class="text long-field"/>
+		    </div>
+		    <div class="buttons-container">
+	        	<div class="buttons">
+		            <input class="aui-button submit aui-button-primary" type="submit" value="Save" id="comment-save-button">
+	        	</div>
+    		</div>
+		</form>
+		
+  </body>
+</html>

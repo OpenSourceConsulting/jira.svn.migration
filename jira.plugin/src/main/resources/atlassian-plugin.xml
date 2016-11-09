@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}"
+	plugins-version="2">
+	<plugin-info>
+		<description>${project.description}</description>
+		<version>${project.version}</version>
+		<vendor name="${project.organization.name}" url="${project.organization.url}" />
+		<param name="plugin-icon">images/pluginIcon.png</param>
+		<param name="plugin-logo">images/pluginLogo.png</param>
+	</plugin-info>
+	<!-- add our i18n resource -->
+	<resource type="i18n" name="i18n" location="jira.svn" />
+	<!-- add our web resources -->
+	<web-resource key="jira.svn-resources" name="jira.svn Web Resources">
+		<dependency>com.atlassian.auiplugin:ajs</dependency>
+		<dependency>com.atlassian.auiplugin:aui-select2</dependency>
+		<dependency>com.atlassian.auiplugin:aui-date-picker</dependency>
+		<resource type="download" name="jira.svn.css" location="/css/jira.svn.css" />
+		<resource type="download" name="jira.svn.js" location="/js/jira.svn.js" />
+		<resource type="download" name="images/" location="/images" />
+		<context>jira.svn</context>
+		<context>atl.admin</context>
+	</web-resource>
+	<!-- Active object module for storing configuration -->
+	<ao key="ao-module">
+		<description>Entity to store plugin path configuration</description>
+		<entity>kr.osci.atlassian.jira.addons.models.Configuration</entity>
+	</ao>
+	<!-- Servlet to save configuration -->
+	<servlet name="Configuration Servlet"
+		class="kr.osci.atlassian.jira.addons.servlets.ConfigurationServlet"
+		key="configuration-servlet">
+		<description>Servlet to save configuration</description>
+		<url-pattern>/jira.svn/configuration</url-pattern>
+	</servlet>
+	<rest key="jira-svn-rest" path="/jira.svn" version="1.0">
+		<description>Provides REST custom service.</description>
+	</rest>
+	<web-item name="confmenu" i18n-name-key="confmenu.key" key="conf-menu"
+		section="system.admin/globalsettings" weight="1000">
+		<description key="confmenu.description">Menu for Configuration</description>
+		<label key="Synteg SVN Configuration"></label>
+		<link linkId="/plugins/servlet/jira.svn/configuration">/plugins/servlet/jira.svn/configuration</link>
+	</web-item>
+</atlassian-plugin>
