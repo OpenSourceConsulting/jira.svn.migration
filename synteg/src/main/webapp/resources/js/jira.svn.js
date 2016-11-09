@@ -213,7 +213,12 @@ function addReloadAction(parentSelector) {
 	$(parentSelector).find(' ul > li').find('li:has(ul)').addClass('parent_li')
 			.attr('role', 'treeitem');
 	$(parentSelector).find('ul > li').on('click', function(e) {
-		var selectedPath = $(this).find("span.hidden").text();
+		var selecteds = $(this).find("span.hidden");
+		if (selecteds.length > 1) {
+			return;
+		}
+		var selectedPath = $(selecteds).text();
+
 		$("#selectedPath").val(selectedPath);
 		if ($(this).find(' > span > i').hasClass("fa-file-code-o")) {
 			$("#selectedType").val("file");

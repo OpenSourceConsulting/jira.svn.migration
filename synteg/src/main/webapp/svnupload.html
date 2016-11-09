@@ -316,6 +316,13 @@ th small {
 												.find('li:has(ul)')
 												.addClass('parent_li')
 												.attr('role', 'treeitem');
+										//do a click for root node
+										$('.tree').find('.fa-database').parent().css("cursor","pointer");
+										$('.tree').find('.fa-database').parent().on("click", function(){
+											var selecteds = $('.tree > ul > li').find("span.hidden")[0];
+											var selectedPath = $(selecteds).text();
+											$("#selectedPath").val(selectedPath);
+										});
 										//show tree view
 										$('.tree').find('li:has(ul)').find(' > ul > li').show("fast");
 										addReloadAction(".tree");
