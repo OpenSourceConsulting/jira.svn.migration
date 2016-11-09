@@ -176,6 +176,15 @@ function submitImportForm() {
 }
 
 function doSubmit() {
+	if ($("#selectedPath").val()==="") {
+		alert("Please select path.");
+		return;
+	}
+	if ($("#file").val() === "") {
+		alert("Please select imported file.");
+		return;
+	}
+
 	var formData = new FormData();
 	formData.append("selectedPath", $("#selectedPath").val());
 	formData.append("message", $("#message").val());
@@ -183,6 +192,31 @@ function doSubmit() {
 	formData.append("isExtract", $("#extractZip").is(":checked"));
 	var url = CONTEXT_PATH + "/api/svn/import";
 	$.ajax({
+		xhr : function() {
+			var xhr = new window.XMLHttpRequest();
+			xhr.upload.addEventListener("progress", function(evt) {
+				if (evt.lengthComputable) {
+					var percentComplete = evt.loaded / evt.total;
+					console.log(percentComplete);
+					$('.progress').css({
+						width : percentComplete * 100 + '%'
+					});
+					if (percentComplete === 1) {
+						$('.progress').addClass('hide');
+					}
+				}
+			}, false);
+			xhr.addEventListener("progress", function(evt) {
+				if (evt.lengthComputable) {
+					var percentComplete = evt.loaded / evt.total;
+					console.log(percentComplete);
+					$('.progress').css({
+						width : percentComplete * 100 + '%'
+					});
+				}
+			}, false);
+			return xhr;
+		},
 		type : "POST",
 		url : url,
 		data : formData,
