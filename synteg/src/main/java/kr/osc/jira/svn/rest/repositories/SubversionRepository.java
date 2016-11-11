@@ -2,6 +2,9 @@ package kr.osc.jira.svn.rest.repositories;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +44,8 @@ public class SubversionRepository implements InitializingBean {
 	private String svnPassword;
 	@Value("${svn.tmp.download.dir}")
 	private String tmpDownloadDir;
+	@Value("${svn.tmp.zip.dir}")
+	private String tmpZipDir;
 	@Value("${svn.tmp.upload.dir}")
 	private String tmpUploadDir;
 	@Value("${svn.eol.style}")
@@ -123,7 +128,7 @@ public class SubversionRepository implements InitializingBean {
 	 * @throws SVNException
 	 * @throws IOException
 	 */
-	public String export(String pegRev, String rev, boolean overwrite) throws SVNException, IOException {
+	public String export(String pegRev, String rev, boolean overwrite, boolean deleteTmp) throws SVNException, IOException {
 
 		SVNRevision pegRevision = pegRev == null ? SVNRevision.HEAD : SVNRevision.parse(pegRev);
 		SVNRevision revision = rev == null ? SVNRevision.HEAD : SVNRevision.parse(rev);
@@ -139,7 +144,7 @@ public class SubversionRepository implements InitializingBean {
 		long exportedRevision = updateClient.doExport(svnUrl, destPath, pegRevision, revision, eolStyle, overwrite, dept);
 		if (exportedRevision > 0) {
 			String zipFileName = svnRootDir;
-			return createZipFile(zipFileName);
+			return createZipFile(zipFileName, deleteTmp);
 		}
 		return StringUtils.EMPTY;
 	}
@@ -158,7 +163,6 @@ public class SubversionRepository implements InitializingBean {
 			element.setResource(entry.getName());
 			if (entry.getKind() == SVNNodeKind.DIR) {
 				element.setType("dir");
-				//element.setChildNodes(listEntries(repository, (path.equals("")) ? entry.getName() : path + "/" + entry.getName()));
 				element.setChildNodes(null);
 			} else if (entry.getKind() == SVNNodeKind.FILE) {
 				element.setType("file");
@@ -189,15 +193,21 @@ public class SubversionRepository implements InitializingBean {
 		return null;
 	}
 
-	private String createZipFile(String fileName) {
+	private String createZipFile(String fileName, boolean deleteTemp) throws IOException {
 		String subDirSeparator = "/";
 		if (serverOs.equals("windows")) {
 			subDirSeparator = "\\";
 		}
-		String zipFile = destPath.getPath() + subDirSeparator + fileName + ".zip";
-		File sourceDir = new File(destPath.getPath() + subDirSeparator + fileName);
-		ZipUtil.pack(sourceDir, new File(zipFile));
-		FileUtils.deleteQuietly(sourceDir);
+		if (!Files.exists(Paths.get(tmpZipDir))) {
+			Files.createDirectories(Paths.get(this.tmpZipDir));
+		}
+		String zipFile = this.tmpZipDir + subDirSeparator + fileName + ".zip";
+		File sourceDir = new File(destPath.getPath());
+		File zip = new File(zipFile);
+		ZipUtil.pack(sourceDir, zip);
+		if (deleteTemp) {
+			FileUtils.deleteQuietly(sourceDir);
+		}
 		return zipFile;
 	}
 

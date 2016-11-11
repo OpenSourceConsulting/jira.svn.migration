@@ -80,7 +80,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 	private String tmpUploadDir;
 	@Value("${jira.svn.rest.url}")
 	private String jiraRestURL;
-
+	@Value("${svn.tmp.delete}")
+	private boolean deleteSVNTmp;
 	private HttpHost jiraHost;
 	private CredentialsProvider credsProvider;
 	private AuthCache authCache;
@@ -178,7 +179,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws Exception {
 		List<Commit> commits = getCommits("key", issueKeys);
 		if (commits.size() == 0) {
-			subversionRepo.export(null, null, true);
+			subversionRepo.export(null, null, true, deleteSVNTmp);
 		} else {
 			int latestRevision = -1;
 			for (Commit c : commits) {
@@ -186,7 +187,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 					latestRevision = c.getRevision();
 				}
 			}
-			String zipFile = subversionRepo.export(null, String.valueOf(latestRevision), true);
+			String zipFile = subversionRepo.export(null, String.valueOf(latestRevision), true, deleteSVNTmp);
 			if (StringUtils.isNotEmpty(zipFile)) {
 				String subDirSeparator = "/";
 				if (serverOs.equals("windows")) {
@@ -201,7 +202,6 @@ public class JiraSVNMigrationController implements InitializingBean {
 				response.flushBuffer();
 				//delete on server
 				FileUtils.deleteQuietly(f);
-
 			}
 		}
 	}
