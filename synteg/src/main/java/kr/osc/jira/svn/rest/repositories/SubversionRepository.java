@@ -177,7 +177,7 @@ public class SubversionRepository implements InitializingBean {
 
 		//add the root element by svn url
 		SVNElement root = new SVNElement();
-		SVNURL rootUrl = svnRepository.getRepositoryRoot(true);
+		SVNURL rootUrl = svnRepository.getLocation();
 		root.setResource(rootUrl.toString());
 		root.setUrl(rootUrl.toString());
 		root.setChildNodes(listEntries(svnRepository, ""));
