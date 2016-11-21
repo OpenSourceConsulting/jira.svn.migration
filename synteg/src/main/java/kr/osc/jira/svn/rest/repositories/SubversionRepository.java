@@ -50,8 +50,8 @@ public class SubversionRepository implements InitializingBean {
 	private String tmpUploadDir;
 	@Value("${svn.eol.style}")
 	private String eolStyle;
-	@Value("${svn.root.dir}")
-	private String svnRootDir;
+	@Value("${svn.export.zip.name}")
+	private String svnExportZipName;
 	@Value("${server.os}")
 	private String serverOs;
 
@@ -134,6 +134,10 @@ public class SubversionRepository implements InitializingBean {
 		SVNRevision revision = rev == null ? SVNRevision.HEAD : SVNRevision.parse(rev);
 		SVNDepth dept = SVNDepth.INFINITY;
 		SVNUpdateClient updateClient = clientManager.getUpdateClient();
+		SVNNodeKind node = this.checkPath(svnUrl, revision.getNumber());
+		if (node == SVNNodeKind.NONE || node == SVNNodeKind.UNKNOWN) {
+			return StringUtils.EMPTY;
+		}
 		/*
 		 * sets externals not to be ignored during the export
 		 */
@@ -143,7 +147,7 @@ public class SubversionRepository implements InitializingBean {
 		 */
 		long exportedRevision = updateClient.doExport(svnUrl, destPath, pegRevision, revision, eolStyle, overwrite, dept);
 		if (exportedRevision > 0) {
-			String zipFileName = svnRootDir;
+			String zipFileName = svnExportZipName;
 			return createZipFile(zipFileName, deleteTmp);
 		}
 		return StringUtils.EMPTY;
@@ -187,7 +191,7 @@ public class SubversionRepository implements InitializingBean {
 	public List<SVNElement> getSVNChildNodes(String parentPath) throws SVNException {
 		SVNURL url = SVNURL.parseURIEncoded(parentPath);
 		String subPath = parentPath.substring(svnRepository.getLocation().toString().length());
-		if (checkPath(url) == SVNNodeKind.DIR) {
+		if (checkPath(url, -1) == SVNNodeKind.DIR) {
 			return listEntries(svnRepository, subPath);
 		}
 		return null;
@@ -219,7 +223,7 @@ public class SubversionRepository implements InitializingBean {
 		File unzipDir = null;
 		SVNCommitClient commitClient = clientManager.getCommitClient();
 		SVNURL dstUrl = SVNURL.parseURIEncoded(destinationPath);
-		SVNNodeKind kind = checkPath(dstUrl);
+		SVNNodeKind kind = checkPath(dstUrl, -1);
 		SVNCommitInfo commitInfo = null;
 		List<SVNURL> importSVNURLs = new ArrayList<SVNURL>();
 		List<File> sources = new ArrayList<File>();
@@ -249,7 +253,8 @@ public class SubversionRepository implements InitializingBean {
 		if (kind == SVNNodeKind.DIR || kind == SVNNodeKind.FILE) {
 			List<SVNURL> deletingUrls = new ArrayList<SVNURL>();
 			for (SVNURL u : importSVNURLs) {
-				if (checkPath(u) != SVNNodeKind.UNKNOWN && checkPath(u) != SVNNodeKind.NONE) {
+				SVNNodeKind n = checkPath(u, -1);
+				if (n != SVNNodeKind.UNKNOWN && n != SVNNodeKind.NONE) {
 					deletingUrls.add(u);
 				}
 			}
@@ -270,11 +275,11 @@ public class SubversionRepository implements InitializingBean {
 		return commitInfo == null ? -1 : commitInfo.getNewRevision();
 	}
 
-	private SVNNodeKind checkPath(SVNURL path) throws SVNException {
+	private SVNNodeKind checkPath(SVNURL path, long revision) throws SVNException {
 		SVNRepository repo = SVNRepositoryFactory.create(path);
 		ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(svnUsername, svnPassword.toCharArray());
 		repo.setAuthenticationManager(authManager);
-		return repo.checkPath("", -1);
+		return repo.checkPath("", revision);
 	}
 
 }

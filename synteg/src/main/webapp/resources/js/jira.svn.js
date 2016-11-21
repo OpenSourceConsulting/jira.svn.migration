@@ -92,18 +92,25 @@ function exportSourceCode(issueIds) {
 function generateSVNTree(treeId, callback) {
 	var tree = $("#" + treeId);
 	var url = CONTEXT_PATH + "/api/svn/tree";
-	$.get(url, function(json) {
-
-		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
-				+ json.resource + '</span>';
-		rootNode += "<span class='hidden'>" + json.url + "</span>";
-		var childNodes = "<ul>"
-		childNodes += listChildNodes(json.childNodes);
-		childNodes += "</ul>";
-		rootNode += childNodes;
-		rootNode += "</li>";
-		tree.html("<ul>" + rootNode + "</ul>");
-		callback();
+	
+	$.ajax({
+		type : "GET",
+		url : url,
+		success : function(json) {
+			var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
+					+ json.resource + '</span>';
+			rootNode += "<span class='hidden'>" + json.url + "</span>";
+			var childNodes = "<ul>"
+			childNodes += listChildNodes(json.childNodes);
+			childNodes += "</ul>";
+			rootNode += childNodes;
+			rootNode += "</li>";
+			tree.html("<ul>" + rootNode + "</ul>");
+			callback();
+		},
+		error: function(json){
+			alert("Connection error: Could not access to SVN.\nPlease check your SVN configuration.");
+		}
 	});
 }
 function loadChildNodes(parentPath, callback) {
@@ -191,7 +198,7 @@ function doSubmit() {
 	formData.append("file", $("#file")[0].files[0]);
 	formData.append("isExtract", $("#extractZip").is(":checked"));
 	var url = CONTEXT_PATH + "/api/svn/import";
-	Pace.track(function() { //for progress bar
+	Pace.track(function() { // for progress bar
 		$.ajax({
 			type : "POST",
 			url : url,
