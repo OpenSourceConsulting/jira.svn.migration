@@ -4,16 +4,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import kr.osc.jira.svn.rest.models.SVNElement;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -21,6 +23,8 @@ import org.tmatesoft.svn.core.SVNCommitInfo;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNLogEntry;
+import org.tmatesoft.svn.core.SVNLogEntryPath;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
@@ -59,6 +63,7 @@ public class SubversionRepository implements InitializingBean {
 	private SVNClientManager clientManager;
 	private SVNURL svnUrl;
 	private File destPath;
+	private String subDirSeparator = "/";
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -68,8 +73,21 @@ public class SubversionRepository implements InitializingBean {
 		svnRepository = SVNRepositoryFactory.create(svnUrl);
 		svnRepository.setAuthenticationManager(authManager);
 		clientManager.setAuthenticationManager(authManager);
-		destPath = new File(tmpDownloadDir);
+		//create tmp dirs
+		if (!Files.exists(Paths.get(tmpDownloadDir))) {
+			Files.createDirectories(Paths.get(this.tmpDownloadDir));
+		}
+		if (!Files.exists(Paths.get(tmpUploadDir))) {
+			Files.createDirectories(Paths.get(this.tmpUploadDir));
+		}
+		if (!Files.exists(Paths.get(tmpZipDir))) {
+			Files.createDirectories(Paths.get(this.tmpZipDir));
+		}
+		destPath = new File(this.tmpDownloadDir);
 
+		if (serverOs.equals("windows")) {
+			subDirSeparator = "\\";
+		}
 	}
 
 	/**
@@ -86,41 +104,11 @@ public class SubversionRepository implements InitializingBean {
 	}
 
 	/**
-	 * Checks out a working copy of url at revision, looked up at pegRevision, using dstPath as the root directory of the newly checked out working copy.
-	 * 
-	 * @param url
-	 * @param destPath
-	 * @param pegRevision
-	 * @param revision
-	 * @param dept
-	 * @param allowUnversionObstruction
-	 * @return
-	 * @throws SVNException
-	 */
-
-	public long checkout(String pegRev, String rev, boolean allowUnversionObstruction) throws SVNException {
-		SVNRevision pegRevision = SVNRevision.parse(pegRev);
-		SVNRevision revision = SVNRevision.parse(rev);
-		SVNDepth dept = SVNDepth.INFINITY;
-		SVNUpdateClient updateClient = clientManager.getUpdateClient();
-		/*
-		 * sets externals not to be ignored during the checkout
-		 */
-		updateClient.setIgnoreExternals(false);
-		/*
-		 * returns the number of the revision at which the working copy is 
-		 */
-		return updateClient.doCheckout(svnUrl, destPath, pegRevision, revision, dept, allowUnversionObstruction);
-
-	}
-
-	/**
 	 * Exports a clean directory or single file from a repository.
 	 * 
 	 * @param url
 	 * @param destPath
-	 * @param pegRevision
-	 * @param revision
+	 * @param revisions
 	 * @param eolStyle
 	 * @param overwrite
 	 * @param dept
@@ -128,29 +116,33 @@ public class SubversionRepository implements InitializingBean {
 	 * @throws SVNException
 	 * @throws IOException
 	 */
-	public String export(String pegRev, String rev, boolean overwrite, boolean deleteTmp) throws SVNException, IOException {
+	public String export(List<Integer> revisions, boolean overwrite, boolean deleteTmp) throws SVNException, IOException {
 
-		SVNRevision pegRevision = pegRev == null ? SVNRevision.HEAD : SVNRevision.parse(pegRev);
-		SVNRevision revision = rev == null ? SVNRevision.HEAD : SVNRevision.parse(rev);
 		SVNDepth dept = SVNDepth.INFINITY;
 		SVNUpdateClient updateClient = clientManager.getUpdateClient();
-		SVNNodeKind node = this.checkPath(svnUrl, revision.getNumber());
-		if (node == SVNNodeKind.NONE || node == SVNNodeKind.UNKNOWN) {
-			return StringUtils.EMPTY;
+		List<Pair> changedPaths = getChangedPaths(revisions);
+
+		//gen temp dir name 
+		String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+		if (!Files.exists(Paths.get(this.tmpDownloadDir + subDirSeparator + timeStamp))) {
+			Files.createDirectories(Paths.get(this.tmpDownloadDir + subDirSeparator + timeStamp));
 		}
-		/*
-		 * sets externals not to be ignored during the export
-		 */
-		updateClient.setIgnoreExternals(false);
-		/*
-		 * returns the number of the revision at which the working copy is 
-		 */
-		long exportedRevision = updateClient.doExport(svnUrl, destPath, pegRevision, revision, eolStyle, overwrite, dept);
-		if (exportedRevision > 0) {
-			String zipFileName = svnExportZipName;
-			return createZipFile(zipFileName, deleteTmp);
+		File tmpPath = new File(this.tmpDownloadDir + subDirSeparator + timeStamp);
+
+		for (Pair<String, Long> path : changedPaths) {
+			SVNURL svnurl = SVNURL.parseURIEncoded(url + path.getLeft());
+			SVNNodeKind node = this.checkPath(svnurl, path.getRight());
+			if (node == SVNNodeKind.NONE || node == SVNNodeKind.UNKNOWN) {
+				continue;
+			}
+
+			updateClient.setIgnoreExternals(false);
+			SVNRevision revision = SVNRevision.create(path.getRight());
+			updateClient.doExport(svnurl, tmpPath, revision, revision, eolStyle, overwrite, dept);
 		}
-		return StringUtils.EMPTY;
+
+		String zipFileName = svnExportZipName;
+		return createZipFile(tmpPath.getPath(), zipFileName, deleteTmp);
 	}
 
 	public List<SVNElement> listEntries(SVNRepository repository, String path) throws SVNException {
@@ -197,16 +189,10 @@ public class SubversionRepository implements InitializingBean {
 		return null;
 	}
 
-	private String createZipFile(String fileName, boolean deleteTemp) throws IOException {
-		String subDirSeparator = "/";
-		if (serverOs.equals("windows")) {
-			subDirSeparator = "\\";
-		}
-		if (!Files.exists(Paths.get(tmpZipDir))) {
-			Files.createDirectories(Paths.get(this.tmpZipDir));
-		}
+	private String createZipFile(String path, String fileName, boolean deleteTemp) throws IOException {
+
 		String zipFile = this.tmpZipDir + subDirSeparator + fileName + ".zip";
-		File sourceDir = new File(destPath.getPath());
+		File sourceDir = new File(path);
 		File zip = new File(zipFile);
 		ZipUtil.pack(sourceDir, zip);
 		if (deleteTemp) {
@@ -273,6 +259,61 @@ public class SubversionRepository implements InitializingBean {
 			FileUtils.deleteQuietly(unzipDir);
 		}
 		return commitInfo == null ? -1 : commitInfo.getNewRevision();
+	}
+
+	private List<Pair> getChangedPaths(List<Integer> revisions) throws SVNException {
+		List<Pair> paths = new ArrayList<Pair>();
+		for (Integer r : revisions) {
+			Collection logEntries = svnRepository.log(new String[] { "" }, null, Long.valueOf(r), Long.valueOf(r), true, true);
+			for (Iterator entries = logEntries.iterator(); entries.hasNext();) {
+				paths = getChangedPaths(paths, (SVNLogEntry) entries.next());
+			}
+		}
+
+		return paths;
+	}
+
+	private List<Pair> getChangedPaths(List<Pair> paths, SVNLogEntry entry) {
+		if (entry.getChangedPaths().size() > 0) {
+			/*
+			 * keys are changed paths
+			 */
+			Set changedPathsSet = entry.getChangedPaths().keySet();
+
+			for (Iterator<?> changedPaths = changedPathsSet.iterator(); changedPaths.hasNext();) {
+				List<Pair> clonedPaths = new ArrayList<Pair>(paths);
+				/*
+				 * obtains a next SVNLogEntryPath
+				 */
+				SVNLogEntryPath entryPath = (SVNLogEntryPath) entry.getChangedPaths().get(changedPaths.next());
+				Pair<String, Long> path = Pair.of(entryPath.getPath(), entry.getRevision());
+				if (clonedPaths.size() > 0) {
+					int idx = checkExistingChangedPath(path, clonedPaths);
+					if (idx == -1) {
+						paths.add(path);
+					} else {
+						Pair p = clonedPaths.get(idx);
+						if (entry.getRevision() > Long.valueOf(p.getRight().toString())) {
+							paths.set(idx, path);
+						}
+					}
+				} else {
+
+					paths.add(path);
+				}
+			}
+		}
+		return paths;
+	}
+
+	private Integer checkExistingChangedPath(Pair pair, List<Pair> paths) {
+		for (int i = 0; i < paths.size(); i++) {
+			Pair p = paths.get(i);
+			if (p.getLeft().toString().equals(pair.getLeft().toString())) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	private SVNNodeKind checkPath(SVNURL path, long revision) throws SVNException {

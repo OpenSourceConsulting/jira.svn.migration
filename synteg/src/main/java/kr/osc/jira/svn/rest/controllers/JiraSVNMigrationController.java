@@ -175,19 +175,14 @@ public class JiraSVNMigrationController implements InitializingBean {
 	//	}
 
 	@RequestMapping("/api/svn/export")
-	@ResponseBody
 	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws Exception {
 		List<Commit> commits = getCommits("key", issueKeys);
-		if (commits.size() == 0) {
-			subversionRepo.export(null, null, true, deleteSVNTmp);
-		} else {
-			int latestRevision = -1;
+		if (commits.size() > 0) {
+			List<Integer> revisions = new ArrayList<Integer>();
 			for (Commit c : commits) {
-				if (c.getRevision() > latestRevision) {
-					latestRevision = c.getRevision();
-				}
+				revisions.add(c.getRevision());
 			}
-			String zipFile = subversionRepo.export(null, String.valueOf(latestRevision), true, deleteSVNTmp);
+			String zipFile = subversionRepo.export(revisions, true, deleteSVNTmp);
 			if (StringUtils.isNotEmpty(zipFile)) {
 				String subDirSeparator = "/";
 				if (serverOs.equals("windows")) {
@@ -200,8 +195,9 @@ public class JiraSVNMigrationController implements InitializingBean {
 				InputStream is = new FileInputStream(f);
 				IOUtils.copy(is, response.getOutputStream());
 				response.flushBuffer();
+				is.close();
 				//delete on server
-				FileUtils.deleteQuietly(f);
+				f.delete();
 			}
 		}
 	}
