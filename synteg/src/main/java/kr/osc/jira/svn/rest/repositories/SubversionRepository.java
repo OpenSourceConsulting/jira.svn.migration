@@ -127,22 +127,38 @@ public class SubversionRepository implements InitializingBean {
 		if (!Files.exists(Paths.get(this.tmpDownloadDir + subDirSeparator + timeStamp))) {
 			Files.createDirectories(Paths.get(this.tmpDownloadDir + subDirSeparator + timeStamp));
 		}
-		File tmpPath = new File(this.tmpDownloadDir + subDirSeparator + timeStamp);
-
+		String tmpPath = this.tmpDownloadDir + subDirSeparator + timeStamp;
 		for (Pair<String, Long> path : changedPaths) {
+			String subtmpPath = "";
 			SVNURL svnurl = SVNURL.parseURIEncoded(url + path.getLeft());
 			SVNNodeKind node = this.checkPath(svnurl, path.getRight());
 			if (node == SVNNodeKind.NONE || node == SVNNodeKind.UNKNOWN) {
 				continue;
 			}
-
+			if (node == SVNNodeKind.FILE) {
+				subtmpPath = this.createSubDirs(tmpPath, path.getLeft());
+				if (!Files.exists(Paths.get(subtmpPath))) {
+					Files.createDirectories(Paths.get(subtmpPath));
+				}
+			}
 			updateClient.setIgnoreExternals(false);
 			SVNRevision revision = SVNRevision.create(path.getRight());
-			updateClient.doExport(svnurl, tmpPath, revision, revision, eolStyle, overwrite, dept);
+			updateClient.doExport(svnurl, new File(subtmpPath), revision, revision, eolStyle, overwrite, dept);
 		}
 
 		String zipFileName = svnExportZipName;
-		return createZipFile(tmpPath.getPath(), zipFileName, deleteTmp);
+		return createZipFile(new File(tmpPath).getPath(), zipFileName, deleteTmp);
+	}
+
+	private String createSubDirs(String tmpPath, String svnFilePath) {
+		String path = tmpPath;
+		String[] arr = svnFilePath.split("/");
+		//the last item of arr is a file name
+		for (int i = 0; i < arr.length - 1; i++) {
+			path += subDirSeparator + arr[i];
+		}
+		path += subDirSeparator;
+		return path;
 	}
 
 	public List<SVNElement> listEntries(SVNRepository repository, String path) throws SVNException {
