@@ -92,26 +92,27 @@ function exportSourceCode(issueIds) {
 function generateSVNTree(treeId, callback) {
 	var tree = $("#" + treeId);
 	var url = CONTEXT_PATH + "/api/svn/tree";
-	
-	$.ajax({
-		type : "GET",
-		url : url,
-		success : function(json) {
-			var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
-					+ json.resource + '</span>';
-			rootNode += "<span class='hidden'>" + json.url + "</span>";
-			var childNodes = "<ul>"
-			childNodes += listChildNodes(json.childNodes);
-			childNodes += "</ul>";
-			rootNode += childNodes;
-			rootNode += "</li>";
-			tree.html("<ul>" + rootNode + "</ul>");
-			callback();
-		},
-		error: function(json){
-			alert("Connection error: Could not access to SVN.\nPlease check your SVN configuration.");
-		}
-	});
+
+	$
+			.ajax({
+				type : "GET",
+				url : url,
+				success : function(json) {
+					var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
+							+ json.resource + '</span>';
+					rootNode += "<span class='hidden'>" + json.url + "</span>";
+					var childNodes = "<ul>"
+					childNodes += listChildNodes(json.childNodes);
+					childNodes += "</ul>";
+					rootNode += childNodes;
+					rootNode += "</li>";
+					tree.html("<ul>" + rootNode + "</ul>");
+					callback();
+				},
+				error : function(json) {
+					alert("Connection error: Could not access to SVN.\nPlease check your SVN configuration.");
+				}
+			});
 }
 function loadChildNodes(parentPath, callback) {
 	var url = CONTEXT_PATH + "/api/svn/tree/load?parent=" + parentPath;
@@ -169,7 +170,7 @@ function submitImportForm() {
 				Ok : function() {
 					submit = true;
 					$(this).dialog("close");
-					doSubmit();
+					doSVNImport();
 				},
 				Cancel : function() {
 					submit = false;
@@ -182,22 +183,46 @@ function submitImportForm() {
 	}
 }
 
-function doSubmit() {
-	if ($("#selectedPath").val() === "") {
-		alert("Please select path.");
-		return;
-	}
-	if ($("#file").val() === "") {
-		alert("Please select imported file.");
-		return;
-	}
+function doSVNImport() {
+	var url = CONTEXT_PATH + "/api/svn/import";
+	Pace.track(function() { // for progress bar
+		$.ajax({
+			type : "POST",
+			url : url,
+			data : {
+				"message" : $("#message").val()
+			},
+			success : function(json) {
+				var dialog = null;
+				if (json.success) {
+					$("#message-dialog").attr("title", "Information");
+					$("#message-dialog").text("Upload is done.");
+					dialog = $("#message-dialog").dialog({
+						modal : true,
+						buttons : {
+							Ok : function() {
+								$(this).dialog("close");
+								window.location.reload();
+							}
+						}
+					});
+				} else {
+					$('.ui-dialog-content').dialog('close');
+				}
+			}
+		});
+	});
+}
 
+function doCheckDiff() {
+	if (!validate()) {
+		return;
+	}
 	var formData = new FormData();
 	formData.append("selectedPath", $("#selectedPath").val());
-	formData.append("message", $("#message").val());
 	formData.append("file", $("#file")[0].files[0]);
 	formData.append("isExtract", $("#extractZip").is(":checked"));
-	var url = CONTEXT_PATH + "/api/svn/import";
+	var url = CONTEXT_PATH + "/api/svn/checkdiff";
 	Pace.track(function() { // for progress bar
 		$.ajax({
 			type : "POST",
@@ -208,23 +233,32 @@ function doSubmit() {
 			enctype : 'multipart/form-data',
 			success : function(json) {
 				if (json.success) {
-					$("#message-dialog").attr("title", "Information");
-					$("#message-dialog").text("Import files successfully.");
-					$("#message-dialog").dialog({
+					$("#log_dialog_content").html(json.data);
+					$('#log_dialog').dialog({
+						width : 700,
+						height : 700,
 						modal : true,
-						buttons : {
-							Ok : function() {
-								$(this).dialog("close");
-								window.location.reload();
+						title : "SVN Diff",
+						buttons : [ {
+							html : "Merge & Commit",
+							"class" : "btn btn-primary",
+							click : function() {
+								doSVNImport();
 							}
-						}
+						}, {
+							html : "<i class='fa fa-times'></i>&nbsp; Cancel",
+							"class" : "btn btn-default",
+							click : function() {
+								$(this).dialog("close");
+							}
+						} ]
 					});
+
 				}
 			}
 		});
 	});
 }
-
 function addReloadAction(parentSelector) {
 	$(parentSelector).find(".fa-folder").parent().css("cursor", "pointer");
 	$(parentSelector).find('ul').attr('role', 'group');
@@ -269,4 +303,17 @@ function addReloadAction(parentSelector) {
 		}
 	})
 
+}
+
+function validate() {
+	if ($("#selectedPath").val() === "" || $("#selectedType").val() !== "dir") {
+		alert("Please select correct directory path.");
+		return false;
+	}
+
+	if ($("#file").val() === "") {
+		alert("Please select imported file.");
+		return false;
+	}
+	return true;
 }

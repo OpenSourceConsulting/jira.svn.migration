@@ -228,7 +228,7 @@ th small {
 									</section>
 								</fieldset>
 								<footer>
-									<button id="importBtn" class="btn btn-primary">Import</button>
+									<button id="checkBtn" class="btn btn-warning" type="button">Check</button>
 								</footer>
 							</form>
 
@@ -248,7 +248,7 @@ th small {
 	<div class="page-footer">
 		<div class="row">
 			<div class="col-xs-12 col-sm-6 text-right">
-				<span class="txt-color-white">Jira SVN migration 1.0 </span>
+				<span class="txt-color-white">Jira SVN Integration 1.0 </span>
 			</div>
 
 		</div>
@@ -341,11 +341,20 @@ th small {
 							
 							$("#importForm").submit(function(e) {
 								e.preventDefault();
-								submitImportForm(this);
+								//submitImportForm(this);
+							});
+							
+							$("#checkBtn").click(function(){
+								doCheckDiff();
+								return;
 							});
 						});
 	</script>
 	<div id="message-dialog"></div>
+	<div id="log_dialog">
+		<p id="log_dialog_content" style="white-space:pre-wrap;">
+		</p>		
+	</div>
 </body>
 
 </html>

@@ -5,6 +5,7 @@ package kr.osc.jira.svn.rest.controllers;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -17,7 +18,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import kr.osc.jira.svn.common.model.GridJsonResponse;
 import kr.osc.jira.svn.common.model.SimpleJsonResponse;
@@ -217,27 +220,92 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	}
 
-	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/api/svn/checkdiff", method = RequestMethod.POST)
 	@ResponseBody
-	public SimpleJsonResponse importSourceCodes(SimpleJsonResponse json, String selectedPath, boolean isExtract, String message,
-			@RequestParam("file") MultipartFile file) throws IOException, SVNException {
-		//File uploadedFile = new File(tmpUploadDir + file.getName());
+	public SimpleJsonResponse checkDiff(SimpleJsonResponse json, HttpServletRequest req, String selectedPath, boolean isExtract,
+			@RequestParam("file") MultipartFile file) throws SVNException, IOException {
 		File uploadDir = new File(tmpUploadDir);
 		if (!uploadDir.exists()) {
 			uploadDir.mkdir();
 		}
-		String uploadedFileName = tmpUploadDir + file.getOriginalFilename();
-		Path folder = Paths.get(uploadedFileName);
+		String uploadedFilePath = tmpUploadDir + file.getOriginalFilename();
+		Path folder = Paths.get(uploadedFilePath);
 		Path path = folder;
 		if (!Files.exists(folder, LinkOption.values())) {
 			path = Files.createFile(folder);
 		}
 		InputStream input = file.getInputStream();
 		Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
-		File sourceFile = path.toFile();
-		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, isExtract, true);
+		String log = subversionRepo.checkDiff(selectedPath, uploadedFilePath, file.getOriginalFilename(), isExtract);
+		//set value for next action
+		HttpSession session = req.getSession();
+		if (log.equals("-1")) {
+			log = "It is a new file. Ready to import.";
+			session.setAttribute("commit_type", "import");
+		} else {
+			if (log.isEmpty()) {
+				log = "The file is no change.";
+			} else {
+				session.setAttribute("commit_type", "commit");
+			}
+		}
+		session.setAttribute("tmp_file_path", uploadedFilePath);
+		session.setAttribute("selected_svn_path", selectedPath);
+		json.setData(log);
 		return json;
 	}
+
+	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST)
+	@ResponseBody
+	public SimpleJsonResponse importSources(SimpleJsonResponse json, HttpServletRequest req, String message) throws SVNException, IOException {
+		HttpSession session = req.getSession();
+		String filePath = (String) session.getAttribute("tmp_file_path");
+		String selectPath = (String) session.getAttribute("selected_svn_path");
+		if (filePath != null) {
+			session.removeAttribute("tmp_file_path");
+			String commitType = (String) session.getAttribute("commit_type");
+			if (commitType != null) {
+				session.removeAttribute("commit_type");
+				if (commitType.equals("import")) {
+					subversionRepo.importSourceCodes(new File(filePath), selectPath, message, false, true);
+				} else if (commitType.equals("commit")) {
+					subversionRepo.importSourceCodes(new File(filePath), selectPath, message, false, true);
+				} else {
+					json.setSuccess(false);
+				}
+			} else {
+				json.setSuccess(false);
+			}
+
+		} else {
+			json.setSuccess(false);
+
+		}
+		return json;
+	}
+
+	//
+	//	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+	//	@ResponseBody
+	//	public SimpleJsonResponse importSourceCodes(SimpleJsonResponse json, HttpServletRequest req, String selectedPath, boolean isExtract, String message,
+	//			@RequestParam("file") MultipartFile file) throws IOException, SVNException {
+	//		//File uploadedFile = new File(tmpUploadDir + file.getName());
+	//		File uploadDir = new File(tmpUploadDir);
+	//		if (!uploadDir.exists()) {
+	//			uploadDir.mkdir();
+	//		}
+	//		String uploadedFile = tmpUploadDir + file.getOriginalFilename();
+	//		Path path = Paths.get(uploadedFile);
+	//		if (!Files.exists(path, LinkOption.values())) {
+	//			path = Files.createFile(path);
+	//		}
+	//		InputStream input = file.getInputStream();
+	//		Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
+	//		File sourceFile = path.toFile();
+	//
+	//		subversionRepo.importSourceCodes(sourceFile, selectedPath, message, isExtract, true);
+	//		return json;
+	//	}
 
 	private String callAPI(HttpUriRequest request) throws Exception {
 		// Add AuthCache to the execution context
