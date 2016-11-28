@@ -155,33 +155,34 @@ function listChildNodes(childNodes) {
 	});
 	return result;
 }
-
-function submitImportForm() {
-	var submit = false;
-	var selectPathType = $("#selectedType").val();
-	if (selectPathType === "file") {
-		$("#message-dialog").attr("title", "Warning");
-		$("#message-dialog")
-				.text(
-						"You are selecting a file on subversion. It will be deleted and replaced to the uploaded file.");
-		$("#message-dialog").dialog({
-			modal : true,
-			buttons : {
-				Ok : function() {
-					submit = true;
-					$(this).dialog("close");
-					doSVNImport();
-				},
-				Cancel : function() {
-					submit = false;
-					$(this).dialog("close");
-				}
-			}
-		});
-	} else {
-		doSubmit();
-	}
-}
+//
+// function submitImportForm() {
+// var submit = false;
+// var selectPathType = $("#selectedType").val();
+// if (selectPathType === "file") {
+// $("#message-dialog").attr("title", "Warning");
+// $("#message-dialog")
+// .text(
+// "You are selecting a file on subversion. It will be deleted and replaced to
+// the uploaded file.");
+// $("#message-dialog").dialog({
+// modal : true,
+// buttons : {
+// Ok : function() {
+// submit = true;
+// $(this).dialog("close");
+// doSVNImport();
+// },
+// Cancel : function() {
+// submit = false;
+// $(this).dialog("close");
+// }
+// }
+// });
+// } else {
+// doSubmit();
+// }
+// }
 
 function doSVNImport() {
 	var url = CONTEXT_PATH + "/api/svn/import";
@@ -190,7 +191,8 @@ function doSVNImport() {
 			type : "POST",
 			url : url,
 			data : {
-				"message" : $("#message").val()
+				"message" : $("#message").val(),
+				"isMultipleFiles" : $("#extractZip").is(":checked")
 			},
 			success : function(json) {
 				var dialog = null;
@@ -220,6 +222,7 @@ function doCheckDiff() {
 	}
 	var formData = new FormData();
 	formData.append("selectedPath", $("#selectedPath").val());
+	formData.append("message", $("#message").val());
 	formData.append("file", $("#file")[0].files[0]);
 	formData.append("isExtract", $("#extractZip").is(":checked"));
 	var url = CONTEXT_PATH + "/api/svn/checkdiff";
@@ -306,6 +309,7 @@ function addReloadAction(parentSelector) {
 }
 
 function validate() {
+
 	if ($("#selectedPath").val() === "" || $("#selectedType").val() !== "dir") {
 		alert("Please select correct directory path.");
 		return false;

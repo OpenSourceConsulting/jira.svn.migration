@@ -1,12 +1,16 @@
 package kr.osc.jira.svn.rest.repositories;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -14,8 +18,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.websocket.server.PathParam;
+
 import kr.osc.jira.svn.rest.models.SVNElement;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,8 +36,14 @@ import org.tmatesoft.svn.core.SVNLogEntryPath;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
+import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
+import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
+import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
+import org.tmatesoft.svn.core.internal.wc2.ng.SvnDiffGenerator;
+import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
+import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
 import org.tmatesoft.svn.core.wc.SVNCommitClient;
 import org.tmatesoft.svn.core.wc.SVNDiffClient;
@@ -38,6 +51,9 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
 import org.tmatesoft.svn.core.wc.SVNRevisionRange;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
+import org.tmatesoft.svn.core.wc2.SvnDiff;
+import org.tmatesoft.svn.core.wc2.SvnOperationFactory;
+import org.tmatesoft.svn.core.wc2.SvnTarget;
 import org.zeroturnaround.zip.ZipUtil;
 import org.zeroturnaround.zip.commons.FileUtils;
 
@@ -70,11 +86,12 @@ public class SubversionRepository implements InitializingBean {
 	private File destPath;
 	private String subDirSeparator = "/";
 	private SVNURL svnPath;
+	ISVNAuthenticationManager authManager = null;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		clientManager = SVNClientManager.newInstance();
-		ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(svnUsername, svnPassword.toCharArray());
+		authManager = SVNWCUtil.createDefaultAuthenticationManager(svnUsername, svnPassword.toCharArray());
 		svnUrl = SVNURL.parseURIEncoded(url);
 		svnRepository = SVNRepositoryFactory.create(svnUrl);
 		svnRepository.setAuthenticationManager(authManager);
@@ -227,70 +244,41 @@ public class SubversionRepository implements InitializingBean {
 		return zipFile;
 	}
 
-	public long importSourceCodes(File sourcePath, String destinationPath, String commitMessage, boolean isUnzip, boolean isRecursive) throws SVNException,
-			IOException {
+	public long importSourceCodes(String sourceFileName, String destinationPath, String commitMessage, boolean isMultipleFiles, boolean isRecursive)
+			throws SVNException, IOException {
 
-		File unzipDir = null;
 		SVNCommitClient commitClient = clientManager.getCommitClient();
 		File workingCopy = new File(tmpWCDir);
-		SVNURL dstUrl = SVNURL.parseURIEncoded(destinationPath + "/" + sourcePath.getName());
-		SVNNodeKind kind = checkPath(dstUrl, -1);
 		SVNCommitInfo commitInfo = null;
 		List<SVNURL> svnURLs = new ArrayList<SVNURL>();
 		List<File> sources = new ArrayList<File>();
-		if (kind == SVNNodeKind.DIR) {
-			//import a foder with multiple files to dir
-			if (sourcePath.getName().endsWith(".zip") && isUnzip) {
-				unzipDir = new File(tmpUploadDir + sourcePath.getName().replace(".zip", ""));
-				ZipUtil.unpack(sourcePath, unzipDir);
-				for (String l : unzipDir.list()) {
-					svnURLs.add(dstUrl.appendPath(l, false));
-					sources.add(new File(unzipDir.getPath() + subDirSeparator + l));
-				}
-
-			} else {
-				//import single file to dir
-				svnURLs.add(dstUrl.appendPath(sourcePath.getName(), false));
-				sources.add(new File(workingCopy.getPath() + subDirSeparator + sourcePath.getName()));
+		SVNDiffClient diffClient = clientManager.getDiffClient();
+		//look for changed files & dir
+		if (isMultipleFiles) {
+			File unzipDir = new File(tmpUploadDir + subDirSeparator + sourceFileName.replace(".zip", ""));
+			String[] fileAndSubDirs = unzipDir.list();
+			for (String f : fileAndSubDirs) {
+				Pair<List<File>, List<SVNURL>> changes = getChangedPaths(tmpWCDir, f, destinationPath);
+				sources.addAll(changes.getLeft());
+				svnURLs.addAll(changes.getRight());
 			}
-
-		} else if (kind == SVNNodeKind.FILE) {
-			svnURLs.add(dstUrl);
-			sources.add(new File(workingCopy.getPath() + subDirSeparator + sourcePath.getName()));
-		} else if (kind == SVNNodeKind.NONE) {
-			commitInfo = commitClient.doImport(sourcePath, dstUrl, commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
-			sourcePath.delete();
+		} else {
+			sources.add(new File(workingCopy.getPath() + subDirSeparator + sourceFileName));
+			svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + sourceFileName));
 		}
-		if (kind == SVNNodeKind.DIR || kind == SVNNodeKind.FILE) {
-			//			List<SVNURL> deletingUrls = new ArrayList<SVNURL>();
-			//			for (SVNURL u : importSVNURLs) {
-			//				SVNNodeKind n = checkPath(u, -1);
-			//				if (n != SVNNodeKind.UNKNOWN && n != SVNNodeKind.NONE) {
-			//					deletingUrls.add(u);
-			//				}
-			//			}
-			//			SVNURL[] urls = new SVNURL[deletingUrls.size()];
-			//			urls = deletingUrls.toArray(urls);
-			//			if (urls.length > 0) {
-			//				commitClient.doDelete(urls, "[Deleted]" + commitMessage);
-			//			}
-			//			for (int i = 0; i < importSVNURLs.size(); i++) {
-			//				commitInfo = commitClient.doImport(sources.get(i), importSVNURLs.get(i), commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
-			//			}
-			SVNDiffClient diffClient = clientManager.getDiffClient();
-			for (int i = 0; i < svnURLs.size(); i++) {
-				diffClient.doMerge(svnURLs.get(i), SVNRevision.HEAD, Collections.singleton(new SVNRevisionRange(SVNRevision.HEAD, SVNRevision.HEAD)),
-						sources.get(i), SVNDepth.fromRecurse(isRecursive), true, false, false, false);
-				//commitInfo = commitClient.doImport(sources.get(i), svnURLs.get(i), commitMessage, null, true, false, SVNDepth.fromRecurse(isRecursive));
-			}
-			commitClient.doCommit(sources.toArray(new File[0]), false, "IP-3 commit", null, null, true, false, SVNDepth.INFINITY);
-			//delete uploaded file from tmp dir
-			sourcePath.delete();
-			if (unzipDir != null) {
-				FileUtils.deleteQuietly(unzipDir);
-			}
+		//merge
+		for (int i = 0; i < svnURLs.size(); i++) {
+			diffClient.doMerge(svnURLs.get(i), SVNRevision.HEAD, Collections.singleton(new SVNRevisionRange(SVNRevision.HEAD, SVNRevision.HEAD)),
+					sources.get(i), SVNDepth.fromRecurse(isRecursive), true, false, false, false);
 		}
-		FileUtils.deleteDirectory(workingCopy);
+		//commit
+		commitClient.doCommit(sources.toArray(new File[0]), false, "IP-3 commit", null, null, true, false, SVNDepth.INFINITY);
+		//empty upload dir & working copy
+		if (Files.exists((new File(tmpUploadDir)).toPath())) {
+			FileUtils.cleanDirectory(new File(tmpUploadDir));
+		}
+		FileUtils.cleanDirectory(workingCopy);
+
 		return commitInfo == null ? -1 : commitInfo.getNewRevision();
 	}
 
@@ -304,43 +292,54 @@ public class SubversionRepository implements InitializingBean {
 	 * @throws SVNException
 	 * @throws IOException
 	 */
-	public String checkDiff(String selectedSVNPath, String filePath, String fileName, boolean isExtract) throws SVNException, IOException {
+	public String checkDiff(String selectedSVNPath, String filePath, String fileName, boolean isExtract, String message) throws SVNException, IOException {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		SvnDiffGenerator diffGenerator = new SvnDiffGenerator();
+		SVNUpdateClient updateClient = clientManager.getUpdateClient();
+		SVNRepository repo = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(selectedSVNPath));
+		repo.setAuthenticationManager(authManager);
+		ISVNEditor editor = repo.getCommitEditor(message, null /*locks*/, true /*keepLocks*/, null /*mediator*/);
+		File unzipDir = new File(tmpUploadDir + fileName.replace(".zip", ""));
+		//add file
 		//check whether file is a zip file.
-		//		if (fileName.endsWith(".zip") && isExtract) {
-		//			File unzipDir = new File(tmpUploadDir + fileName.replace(".zip", ""));
-		//			ZipUtil.unpack(new File(filePath), unzipDir);
-		//			for (String l : unzipDir.list()) {
-		//				svnURLs.add(dstUrl.appendPath(l, false));
-		//				sources.add(new File(unzipDir.getPath() + subDirSeparator + l));
-		//			}
-		//
-		//		}
-		//check exist
-		SVNNodeKind nodeKind = this.checkPath(SVNURL.parseURIEncoded(selectedSVNPath + "/" + fileName), -1);
-		if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
-			return "-1";
-		} else {
-			//in order to check different between current source and new one, it should be working on working copy dir of svn. 
-			//check out to tmp working copy dir
-			if (Files.exists((new File(tmpWCDir)).toPath())) {
-				FileUtils.cleanDirectory(new File(tmpWCDir));
+		editor.openRoot(-1);
+		if (fileName.endsWith(".zip") && isExtract) {
+			ZipUtil.unpack(new File(filePath), unzipDir);
+			for (String l : unzipDir.list()) {
+				createFileAndDir(selectedSVNPath, unzipDir.getPath(), l, editor);
 			}
-			File workingCopy = new File(tmpWCDir);
-			SVNUpdateClient updateClient = clientManager.getUpdateClient();
-			updateClient.doCheckout(SVNURL.parseURIEncoded(selectedSVNPath), workingCopy, SVNRevision.HEAD, SVNRevision.HEAD, SVNDepth.INFINITY, false);
-			if (nodeKind == SVNNodeKind.FILE) {
-				FileUtils.copyFileToDirectory(new File(filePath), workingCopy);
-				svnPath = SVNURL.parseURIEncoded(selectedSVNPath + "/" + fileName);
-				SVNDiffClient diffClient = clientManager.getDiffClient();
-				File newFile = new File(tmpWCDir + fileName);
-				diffClient.doDiff(svnPath, SVNRevision.HEAD, newFile, SVNRevision.WORKING, SVNDepth.INFINITY, true, os, null);
-				//			diffClient.doMerge(svnPath, SVNRevision.HEAD, Collections.singleton(new SVNRevisionRange(SVNRevision.HEAD, SVNRevision.HEAD)), newFile,
-				//					SVNDepth.FILES, true, false, false, false);
-				//commitClient.doCommit(files, false, "IP-3 commit", null, null, true, false, SVNDepth.INFINITY);
+		} else {
+			//check exist
+			SVNNodeKind nodeKind = this.checkPath(SVNURL.parseURIEncoded(selectedSVNPath + "/" + fileName), -1);
+			if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
+				createFileAndDir(selectedSVNPath, tmpUploadDir, fileName, editor);
 			}
 		}
-
+		editor.closeDir();
+		editor.closeEdit();
+		File workingCopy = new File(tmpWCDir);
+		//in order to check different between current source and new one, it should be working on working copy dir of svn. 
+		//check out to tmp working copy dir
+		if (Files.exists((new File(tmpWCDir)).toPath())) {
+			FileUtils.cleanDirectory(new File(tmpWCDir));
+		}
+		updateClient.doCheckout(SVNURL.parseURIEncoded(selectedSVNPath), workingCopy, SVNRevision.HEAD, SVNRevision.HEAD, SVNDepth.INFINITY, false);
+		//copy changed files to working copy
+		if (fileName.endsWith(".zip") && isExtract) {
+			FileUtils.copyDirectory(unzipDir, workingCopy);
+		} else {
+			FileUtils.copyFileToDirectory(new File(tmpUploadDir + subDirSeparator + fileName), workingCopy);
+		}
+		//check diff
+		svnPath = SVNURL.parseURIEncoded(selectedSVNPath);
+		diffGenerator.setBasePath(workingCopy);
+		SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
+		SvnDiff diff = svnOperationFactory.createDiff();
+		diff.setSources(SvnTarget.fromFile(workingCopy, SVNRevision.HEAD), SvnTarget.fromFile(workingCopy, SVNRevision.WORKING));
+		diff.setDiffGenerator(diffGenerator);
+		diff.setOutput(os);
+		diff.run();
+		svnOperationFactory.dispose();
 		return os.toString();
 	}
 
@@ -387,6 +386,63 @@ public class SubversionRepository implements InitializingBean {
 			}
 		}
 		return paths;
+	}
+
+	private void createFileAndDir(String selectedSVNPath, String path, String name, ISVNEditor editor) throws SVNException {
+		SVNDeltaGenerator deltaGenerator = new SVNDeltaGenerator();
+		SVNNodeKind nodeKind = this.checkPath(SVNURL.parseURIEncoded(selectedSVNPath + "/" + name), -1);
+		File p = new File(path + subDirSeparator + name);//check whether the path is dir or file
+		if (p.isFile()) {
+			if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
+				editor.addFile(name, null, -1);
+				editor.applyTextDelta(name, null);
+				editor.textDeltaEnd(name);
+				String checksum = deltaGenerator.sendDelta(name, new ByteArrayInputStream(new byte[0]), editor, true);
+				editor.closeFile(name, checksum);
+			}
+		} else if (p.isDirectory()) {
+			if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
+				editor.addDir(name, null, -1);
+				editor.closeDir();
+			}
+			//recursion
+			String[] subFileAndDirs = p.list();
+			editor.openDir(name, -1);
+			for (String f : subFileAndDirs) {
+				createFileAndDir(selectedSVNPath + "/" + name, p.getPath(), f, editor);
+			}
+			editor.closeDir();
+
+		}
+
+	}
+
+	/**
+	 * Collect the changed paths and corresponding svn path for multiple files importing case
+	 * 
+	 * @param workingCopyPath
+	 * @param sourceFileName
+	 * @return
+	 * @throws SVNException
+	 */
+	private Pair<List<File>, List<SVNURL>> getChangedPaths(String workingCopyPath, String sourceFileName, String destinationPath) throws SVNException {
+		List<File> sources = new ArrayList<File>();
+		List<SVNURL> svnUrls = new ArrayList<SVNURL>();
+		File path = new File(workingCopyPath + subDirSeparator + sourceFileName);
+		if (path.isFile()) {
+			sources.add(path);
+			svnUrls.add(SVNURL.parseURIEncoded(destinationPath + "/" + sourceFileName));
+		} else {
+			String[] fileAndSubDirs = path.list();
+			for (String f : fileAndSubDirs) {
+				Pair<List<File>, List<SVNURL>> subResult = getChangedPaths(workingCopyPath + subDirSeparator + sourceFileName, f, destinationPath + "/"
+						+ sourceFileName);
+				sources.addAll(subResult.getLeft());
+				svnUrls.addAll(subResult.getRight());
+			}
+		}
+		Pair<List<File>, List<SVNURL>> result = Pair.of(sources, svnUrls);
+		return result;
 	}
 
 	private Integer checkExistingChangedPath(Pair pair, List<Pair> paths) {
