@@ -6,11 +6,15 @@ function getProjectList(selectId) {
 	$.ajax({
 		url : url,
 		success : function(json) {
-			$.each(json.list, function(k, v) {
-				options += "<option value='" + v.id + "'>" + v.key + " - "
-						+ v.name + "</option>";
-			})
-			select.html(options);
+			if (json.success) {
+				$.each(json.list, function(k, v) {
+					options += "<option value='" + v.id + "'>" + v.key + " - "
+							+ v.name + "</option>";
+				})
+				select.html(options);
+			} else {
+				alert(json.msg);
+			}
 		},
 		error : function(e) {
 			alert(e.msg);
@@ -21,7 +25,8 @@ function getProjectList(selectId) {
 function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 	var url = CONTEXT_PATH + "/api/issues/filter";
 	var data = [];
-	if (projectId == 0) { // maybe 0 or "0"
+	alert(projectId);
+	if (projectId == 0 || projectId === null) { // maybe 0 or "0"
 		$("#message").text("Project is required");
 		$("#message").dialog({
 			modal : true,
@@ -33,35 +38,47 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 		});
 		return;
 	} else {
-		$.get(url, {
-			"projectId" : projectId,
-			"fromDate" : fromDate,
-			"toDate" : toDate,
-			"fields" : fields
-		}, function(json) {
-			$.each(json.list, function(k, v) {
-				var commits = "";
-				$.each(v.commits, function(key, value) {
-					commits += "Revision:" + value.revision + "-["
-							+ value.author + "] " + value.message + "<br/>";
-				});
-				if (commits === "") {
-					commits = "No commit.";
+		$.ajax({
+			url : url,
+			data : {
+				"projectId" : projectId,
+				"fromDate" : fromDate,
+				"toDate" : toDate,
+				"fields" : fields
+			},
+			success : function(json) {
+				if (json.success) {
+					$.each(json.list, function(k, v) {
+						var commits = "";
+						$.each(v.commits, function(key, value) {
+							commits += "Revision:" + value.revision + "-["
+									+ value.author + "] " + value.message
+									+ "<br/>";
+						});
+						if (commits === "") {
+							commits = "No commit.";
+						}
+						data.push({
+							id : v.id,
+							key : v.key,
+							summary : v.summary,
+							url : v.url,
+							created : v.created,
+							last_updated : v.updated,
+							status : v.status,
+							commits : commits
+						});
+					});
+					$("#" + gridId).jqGrid('setGridParam', {
+						data : data
+					}).trigger('reloadGrid');
+				} else {
+					alert(json.msg);
 				}
-				data.push({
-					id : v.id,
-					key : v.key,
-					summary : v.summary,
-					url : v.url,
-					created : v.created,
-					last_updated : v.updated,
-					status : v.status,
-					commits : commits
-				});
-			});
-			$("#" + gridId).jqGrid('setGridParam', {
-				data : data
-			}).trigger('reloadGrid');
+			},
+			error : function(e) {
+				alert(e.msg);
+			}
 		});
 	}
 }
@@ -92,33 +109,48 @@ function exportSourceCode(issueIds) {
 function generateSVNTree(treeId, callback) {
 	var tree = $("#" + treeId);
 	var url = CONTEXT_PATH + "/api/svn/tree";
-
 	$
 			.ajax({
 				type : "GET",
 				url : url,
 				success : function(json) {
-					var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
-							+ json.resource + '</span>';
-					rootNode += "<span class='hidden'>" + json.url + "</span>";
-					var childNodes = "<ul>"
-					childNodes += listChildNodes(json.childNodes);
-					childNodes += "</ul>";
-					rootNode += childNodes;
-					rootNode += "</li>";
-					tree.html("<ul>" + rootNode + "</ul>");
-					callback();
+					if (json.success) {						
+						var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
+								+ json.data.resource + '</span>';
+						rootNode += "<span class='hidden'>" + json.data.url
+								+ "</span>";
+						var childNodes = "<ul>"
+						childNodes += listChildNodes(json.data.childNodes);
+						childNodes += "</ul>";
+						rootNode += childNodes;
+						rootNode += "</li>";
+						tree.html("<ul>" + rootNode + "</ul>");
+						callback();
+					} else {
+						alert(json.msg);
+					}
 				},
 				error : function(json) {
-					alert("Connection error: Could not access to SVN.\nPlease check your SVN configuration.");
+					alert(json.msg);
 				}
 			});
 }
 function loadChildNodes(parentPath, callback) {
 	var url = CONTEXT_PATH + "/api/svn/tree/load?parent=" + parentPath;
-	$.get(url, function(json) {
-		var childNodes = listChildNodes(json.list);
-		callback(childNodes);
+	$.ajax({
+		type : "GET",
+		url : url,
+		success : function(json) {
+			if (json.success) {
+				var childNodes = listChildNodes(json.list);
+				callback(childNodes);
+			} else {
+				alert(json.msg);
+			}
+		},
+		error : function(e) {
+			alert(e.msg);
+		}
 	});
 }
 function listChildNodes(childNodes) {
@@ -155,34 +187,6 @@ function listChildNodes(childNodes) {
 	});
 	return result;
 }
-//
-// function submitImportForm() {
-// var submit = false;
-// var selectPathType = $("#selectedType").val();
-// if (selectPathType === "file") {
-// $("#message-dialog").attr("title", "Warning");
-// $("#message-dialog")
-// .text(
-// "You are selecting a file on subversion. It will be deleted and replaced to
-// the uploaded file.");
-// $("#message-dialog").dialog({
-// modal : true,
-// buttons : {
-// Ok : function() {
-// submit = true;
-// $(this).dialog("close");
-// doSVNImport();
-// },
-// Cancel : function() {
-// submit = false;
-// $(this).dialog("close");
-// }
-// }
-// });
-// } else {
-// doSubmit();
-// }
-// }
 
 function doSVNImport() {
 	var url = CONTEXT_PATH + "/api/svn/import";
@@ -209,8 +213,13 @@ function doSVNImport() {
 						}
 					});
 				} else {
+					alert(e.msg);
 					$('.ui-dialog-content').dialog('close');
 				}
+			},
+			error : function(e) {
+				alert(e.msg);
+				$('.ui-dialog-content').dialog('close');
 			}
 		});
 	});
@@ -257,7 +266,12 @@ function doCheckDiff() {
 						} ]
 					});
 
+				} else {
+					alert(e.msg);
 				}
+			},
+			error : function(e) {
+				alert(e.msg);
 			}
 		});
 	});

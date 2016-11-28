@@ -48,6 +48,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,6 +71,7 @@ import org.zeroturnaround.zip.commons.IOUtils;
  */
 @Controller
 public class JiraSVNMigrationController implements InitializingBean {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JiraSVNMigrationController.class);
 	@Value("${jira.ip}")
 	private String jiraIPAddr;
 	@Value("${jira.port}")
@@ -103,17 +106,23 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping("/api/projects")
 	@ResponseBody
-	public GridJsonResponse getProjectList(GridJsonResponse json) throws Exception {
-		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/project")).build();
-		String response = callAPI(httpget);
-		JSONArray array = new JSONArray(response);
-		List<Project> projects = new ArrayList<Project>();
-		for (int i = 0; i < array.length(); i++) {
-			JSONObject obj = array.getJSONObject(i);
-			projects.add(new Project(obj.getString("id"), obj.getString("key"), obj.getString("name"), obj.getString("self")));
+	public GridJsonResponse getProjectList(GridJsonResponse json) {
+		try {
+			HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/project")).build();
+			String response = callAPI(httpget);
+			JSONArray array = new JSONArray(response);
+			List<Project> projects = new ArrayList<Project>();
+			for (int i = 0; i < array.length(); i++) {
+				JSONObject obj = array.getJSONObject(i);
+				projects.add(new Project(obj.getString("id"), obj.getString("key"), obj.getString("name"), obj.getString("self")));
+			}
+			json.setList(projects);
+			json.setTotal(projects.size());
+		} catch (Exception ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
 		}
-		json.setList(projects);
-		json.setTotal(projects.size());
 		return json;
 	}
 
@@ -126,7 +135,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping("/api/issues/filter")
 	@ResponseBody
-	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate, String fields) throws Exception {
+	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate, String fields) {
 		String jql = "project=" + projectId;
 		if (StringUtils.isNotEmpty(fromDate)) {
 			jql += " AND created>=\"" + fromDate + "\"";
@@ -134,40 +143,45 @@ public class JiraSVNMigrationController implements InitializingBean {
 		if (StringUtils.isNotEmpty(toDate)) {
 			jql += " AND created<=\"" + toDate + "\"";
 		}
+		try {
+			jql = URLEncoder.encode(jql, "UTF-8");
+			HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/search?jql=" + jql + "&fields=" + fields)).build();
+			String response = callAPI(httpget);
+			JSONObject object = new JSONObject(response);
+			JSONArray array = object.getJSONArray("issues");
+			List<Issue> issues = new ArrayList<Issue>();
+			for (int i = 0; i < array.length(); i++) {
+				JSONObject obj = array.getJSONObject(i);
+				int id = obj.getInt("id");
+				String key = obj.getString("key");
+				String url = obj.getString("self");
+				String summary = "";
+				String created = "";
+				String updated = "";
+				String status = "";
+				try {
+					JSONObject f = obj.getJSONObject("fields");
+					summary = f.getString("summary");
+					created = f.getString("created").substring(0, "yyyy-MM-dd".length());
+					updated = f.getString("updated").substring(0, "yyyy-MM-dd".length());
+					status = f.getJSONObject("status").getString("name");
+				} catch (Exception e) {
 
-		jql = URLEncoder.encode(jql, "UTF-8");
-		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/search?jql=" + jql + "&fields=" + fields)).build();
-		String response = callAPI(httpget);
-		JSONObject object = new JSONObject(response);
-		JSONArray array = object.getJSONArray("issues");
-		List<Issue> issues = new ArrayList<Issue>();
-		for (int i = 0; i < array.length(); i++) {
-			JSONObject obj = array.getJSONObject(i);
-			int id = obj.getInt("id");
-			String key = obj.getString("key");
-			String url = obj.getString("self");
-			String summary = "";
-			String created = "";
-			String updated = "";
-			String status = "";
-			try {
-				JSONObject f = obj.getJSONObject("fields");
-				summary = f.getString("summary");
-				created = f.getString("created").substring(0, "yyyy-MM-dd".length());
-				updated = f.getString("updated").substring(0, "yyyy-MM-dd".length());
-				status = f.getJSONObject("status").getString("name");
-			} catch (Exception e) {
+				}
+				String[] keywords = new String[1];
+				keywords[0] = key;
 
+				List<Commit> commits = getCommits("key", keywords);
+
+				issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
 			}
-			String[] keywords = new String[1];
-			keywords[0] = key;
-
-			List<Commit> commits = getCommits("key", keywords);
-
-			issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
+			json.setList(issues);
+			json.setTotal(issues.size());
+		} catch (Exception ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
 		}
-		json.setList(issues);
-		json.setTotal(issues.size());
 		return json;
 	}
 
@@ -178,44 +192,63 @@ public class JiraSVNMigrationController implements InitializingBean {
 	//	}
 
 	@RequestMapping("/api/svn/export")
-	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) throws Exception {
-		List<Commit> commits = getCommits("key", issueKeys);
-		if (commits.size() > 0) {
-			List<Integer> revisions = new ArrayList<Integer>();
-			for (Commit c : commits) {
-				revisions.add(c.getRevision());
-			}
-			String zipFile = subversionRepo.export(revisions, true, deleteSVNTmp);
-			if (StringUtils.isNotEmpty(zipFile)) {
-				String subDirSeparator = "/";
-				if (serverOs.equals("windows")) {
-					subDirSeparator = "\\";
+	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) {
+		try {
+			List<Commit> commits = getCommits("key", issueKeys);
+			if (commits.size() > 0) {
+				List<Integer> revisions = new ArrayList<Integer>();
+				for (Commit c : commits) {
+					revisions.add(c.getRevision());
 				}
-				response.setContentType("application/zip");
-				String fileName = zipFile.substring(zipFile.lastIndexOf(subDirSeparator) + 1);
-				response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
-				File f = new File(zipFile);
-				InputStream is = new FileInputStream(f);
-				IOUtils.copy(is, response.getOutputStream());
-				response.flushBuffer();
-				is.close();
-				//delete on server
-				f.delete();
+				String zipFile = subversionRepo.export(revisions, true, deleteSVNTmp);
+				if (StringUtils.isNotEmpty(zipFile)) {
+					String subDirSeparator = "/";
+					if (serverOs.equals("windows")) {
+						subDirSeparator = "\\";
+					}
+					response.setContentType("application/zip");
+					String fileName = zipFile.substring(zipFile.lastIndexOf(subDirSeparator) + 1);
+					response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+					File f = new File(zipFile);
+					InputStream is = new FileInputStream(f);
+					IOUtils.copy(is, response.getOutputStream());
+					response.flushBuffer();
+					is.close();
+					//delete on server
+					f.delete();
+				}
 			}
+		} catch (Exception ex) {
+			LOGGER.error(ex.getMessage());
 		}
 	}
 
 	@RequestMapping("/api/svn/tree")
 	@ResponseBody
-	public SVNElement getSVNTree() throws SVNException {
-		return subversionRepo.getSVNTree();
+	public SimpleJsonResponse getSVNTree(SimpleJsonResponse json) {
+		SVNElement tree = null;
+		try {
+			tree = subversionRepo.getSVNTree();
+			json.setData(tree);
+		} catch (SVNException ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
+		}
+		return json;
 
 	}
 
 	@RequestMapping("/api/svn/tree/load")
 	@ResponseBody
-	public GridJsonResponse getSVNTree(GridJsonResponse json, String parent) throws SVNException {
-		json.setList(subversionRepo.getSVNChildNodes(parent));
+	public GridJsonResponse getSVNTree(GridJsonResponse json, String parent) {
+		try {
+			json.setList(subversionRepo.getSVNChildNodes(parent));
+		} catch (Exception ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
+		}
 		return json;
 
 	}
@@ -223,41 +256,52 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@RequestMapping(value = "/api/svn/checkdiff", method = RequestMethod.POST)
 	@ResponseBody
 	public SimpleJsonResponse checkDiff(SimpleJsonResponse json, HttpServletRequest req, String selectedPath, boolean isExtract,
-			@RequestParam("file") MultipartFile file, String message) throws SVNException, IOException {
+			@RequestParam("file") MultipartFile file, String message) {
 		File uploadDir = new File(tmpUploadDir);
 		if (!uploadDir.exists()) {
 			uploadDir.mkdir();
 		}
-		String uploadedFilePath = tmpUploadDir + file.getOriginalFilename();
-		Path folder = Paths.get(uploadedFilePath);
-		Path path = folder;
-		if (!Files.exists(folder, LinkOption.values())) {
-			path = Files.createFile(folder);
+		try {
+			String uploadedFilePath = tmpUploadDir + file.getOriginalFilename();
+			Path folder = Paths.get(uploadedFilePath);
+			Path path = folder;
+			if (!Files.exists(folder, LinkOption.values())) {
+				path = Files.createFile(folder);
+			}
+			InputStream input = file.getInputStream();
+			Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
+			String log = subversionRepo.checkDiff(selectedPath, uploadedFilePath, file.getOriginalFilename(), isExtract, message);
+			//set value for next action
+			HttpSession session = req.getSession();
+			session.setAttribute("tmp_file_name", file.getOriginalFilename());
+			session.setAttribute("selected_svn_path", selectedPath);
+			if (log.equals("")) {
+				log = "There is no changes.";
+			}
+			json.setData(log);
+		} catch (Exception ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
 		}
-		InputStream input = file.getInputStream();
-		Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
-		String log = subversionRepo.checkDiff(selectedPath, uploadedFilePath, file.getOriginalFilename(), isExtract, message);
-		//set value for next action
-		HttpSession session = req.getSession();
-		session.setAttribute("tmp_file_name", file.getOriginalFilename());
-		session.setAttribute("selected_svn_path", selectedPath);
-		if (log.equals("")) {
-			log = "There is no changes.";
-		}
-		json.setData(log);
 		return json;
 	}
 
 	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST)
 	@ResponseBody
-	public SimpleJsonResponse importSources(SimpleJsonResponse json, HttpServletRequest req, String message, boolean isMultipleFiles) throws SVNException,
-			IOException {
+	public SimpleJsonResponse importSources(SimpleJsonResponse json, HttpServletRequest req, String message, boolean isMultipleFiles) {
 		HttpSession session = req.getSession();
 		String sourceFileName = (String) session.getAttribute("tmp_file_name");
 		String selectPath = (String) session.getAttribute("selected_svn_path");
 		session.removeAttribute("tmp_file_name");
 		session.removeAttribute("selected_svn_path");
-		subversionRepo.importSourceCodes(sourceFileName, selectPath, message, isMultipleFiles, true);
+		try {
+			subversionRepo.importSourceCodes(sourceFileName, selectPath, message, isMultipleFiles, true);
+		} catch (Exception ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
+		}
 		return json;
 	}
 
