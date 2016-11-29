@@ -254,7 +254,7 @@ public class SubversionRepository implements InitializingBean {
 		List<File> sources = new ArrayList<File>();
 		SVNDiffClient diffClient = clientManager.getDiffClient();
 		//look for changed files & dir
-		if (isMultipleFiles) {
+		if (sourceFileName.contains(".zip") && isMultipleFiles) {
 			File unzipDir = new File(tmpUploadDir + subDirSeparator + sourceFileName.replace(".zip", ""));
 			String[] fileAndSubDirs = unzipDir.list();
 			for (String f : fileAndSubDirs) {

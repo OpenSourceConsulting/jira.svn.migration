@@ -25,7 +25,7 @@ function getProjectList(selectId) {
 function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 	var url = CONTEXT_PATH + "/api/issues/filter";
 	var data = [];
-	alert(projectId);
+
 	if (projectId == 0 || projectId === null) { // maybe 0 or "0"
 		$("#message").text("Project is required");
 		$("#message").dialog({

@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -33,6 +34,7 @@ import kr.osc.jira.svn.rest.repositories.SubversionRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
@@ -110,20 +112,23 @@ public class JiraSVNMigrationController implements InitializingBean {
 		try {
 			HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/project")).build();
 			String response = callAPI(httpget);
-			JSONArray array = new JSONArray(response);
-			List<Project> projects = new ArrayList<Project>();
-			for (int i = 0; i < array.length(); i++) {
-				JSONObject obj = array.getJSONObject(i);
-				projects.add(new Project(obj.getString("id"), obj.getString("key"), obj.getString("name"), obj.getString("self")));
+			if (!response.equals("")) {
+				JSONArray array = new JSONArray(response);
+				List<Project> projects = new ArrayList<Project>();
+				for (int i = 0; i < array.length(); i++) {
+					JSONObject obj = array.getJSONObject(i);
+					projects.add(new Project(obj.getString("id"), obj.getString("key"), obj.getString("name"), obj.getString("self")));
+				}
+				json.setList(projects);
+				json.setTotal(projects.size());
 			}
-			json.setList(projects);
-			json.setTotal(projects.size());
 		} catch (Exception ex) {
 			json.setSuccess(false);
 			json.setMsg(ex.getMessage());
 			LOGGER.error(ex.getMessage());
 		}
 		return json;
+
 	}
 
 	@RequestMapping("/api/search")
@@ -147,36 +152,38 @@ public class JiraSVNMigrationController implements InitializingBean {
 			jql = URLEncoder.encode(jql, "UTF-8");
 			HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + "/rest/api/2/search?jql=" + jql + "&fields=" + fields)).build();
 			String response = callAPI(httpget);
-			JSONObject object = new JSONObject(response);
-			JSONArray array = object.getJSONArray("issues");
-			List<Issue> issues = new ArrayList<Issue>();
-			for (int i = 0; i < array.length(); i++) {
-				JSONObject obj = array.getJSONObject(i);
-				int id = obj.getInt("id");
-				String key = obj.getString("key");
-				String url = obj.getString("self");
-				String summary = "";
-				String created = "";
-				String updated = "";
-				String status = "";
-				try {
-					JSONObject f = obj.getJSONObject("fields");
-					summary = f.getString("summary");
-					created = f.getString("created").substring(0, "yyyy-MM-dd".length());
-					updated = f.getString("updated").substring(0, "yyyy-MM-dd".length());
-					status = f.getJSONObject("status").getString("name");
-				} catch (Exception e) {
+			if (!response.equals("")) {
+				JSONObject object = new JSONObject(response);
+				JSONArray array = object.getJSONArray("issues");
+				List<Issue> issues = new ArrayList<Issue>();
+				for (int i = 0; i < array.length(); i++) {
+					JSONObject obj = array.getJSONObject(i);
+					int id = obj.getInt("id");
+					String key = obj.getString("key");
+					String url = obj.getString("self");
+					String summary = "";
+					String created = "";
+					String updated = "";
+					String status = "";
+					try {
+						JSONObject f = obj.getJSONObject("fields");
+						summary = f.getString("summary");
+						created = f.getString("created").substring(0, "yyyy-MM-dd".length());
+						updated = f.getString("updated").substring(0, "yyyy-MM-dd".length());
+						status = f.getJSONObject("status").getString("name");
+					} catch (Exception e) {
 
+					}
+					String[] keywords = new String[1];
+					keywords[0] = key;
+
+					List<Commit> commits = getCommits("key", keywords);
+
+					issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
 				}
-				String[] keywords = new String[1];
-				keywords[0] = key;
-
-				List<Commit> commits = getCommits("key", keywords);
-
-				issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
+				json.setList(issues);
+				json.setTotal(issues.size());
 			}
-			json.setList(issues);
-			json.setTotal(issues.size());
 		} catch (Exception ex) {
 			json.setSuccess(false);
 			json.setMsg(ex.getMessage());
@@ -305,35 +312,46 @@ public class JiraSVNMigrationController implements InitializingBean {
 		return json;
 	}
 
-	private String callAPI(HttpUriRequest request) throws Exception {
-		// Add AuthCache to the execution context
-		final HttpClientContext context = HttpClientContext.create();
-		context.setCredentialsProvider(credsProvider);
-		context.setAuthCache(authCache);
+	private String callAPI(HttpUriRequest request) {
+		String resJson = "";
+		try {
+			// Add AuthCache to the execution context
+			final HttpClientContext context = HttpClientContext.create();
+			context.setCredentialsProvider(credsProvider);
+			context.setAuthCache(authCache);
 
-		HttpClient httpclient = HttpClientBuilder.create().build();
-		HttpResponse response = httpclient.execute(request, context);
-		String resJson = EntityUtils.toString(response.getEntity());
-
+			HttpClient httpclient = HttpClientBuilder.create().build();
+			HttpResponse response = httpclient.execute(request, context);
+			if (response.getStatusLine().getStatusCode() >= 400) {
+				LOGGER.error(response.getStatusLine().getStatusCode() + " - Cannot get response successfully.");
+			} else {
+				resJson = EntityUtils.toString(response.getEntity());
+			}
+			return resJson;
+		} catch (Exception ex) {
+			LOGGER.error(ex.getMessage());
+		}
 		return resJson;
 	}
 
-	private List<Commit> getCommits(String field, String[] keywords) throws Exception {
+	private List<Commit> getCommits(String field, String[] keywords) throws URISyntaxException {
+		List<Commit> commits = new ArrayList<Commit>();
+
 		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraRestURL)).addParameter("field", "key")
 				.addParameter("issueKeys", StringUtils.join(keywords, ",")).build();
-		List<Commit> commits = new ArrayList<Commit>();
 		String response = callAPI(httpget);
-		JSONArray array = new JSONArray(response);
-		for (int i = 0; i < array.length(); i++) {
-			JSONObject obj = array.getJSONObject(i);
-			int revision = obj.getInt("revision");
-			String key = obj.getString("key");
-			String author = obj.getString("author");
-			String message = obj.getString("message");
-			String project = obj.getString("project");
-			String repository = obj.getString("repository");
-
-			commits.add(new Commit(revision, key, author, message, project, repository));
+		if (!response.equals("")) {
+			JSONArray array = new JSONArray(response);
+			for (int i = 0; i < array.length(); i++) {
+				JSONObject obj = array.getJSONObject(i);
+				int revision = obj.getInt("revision");
+				String key = obj.getString("key");
+				String author = obj.getString("author");
+				String message = obj.getString("message");
+				String project = obj.getString("project");
+				String repository = obj.getString("repository");
+				commits.add(new Commit(revision, key, author, message, project, repository));
+			}
 		}
 		return commits;
 	}
