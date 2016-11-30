@@ -5,11 +5,8 @@ package kr.osc.jira.svn.rest.controllers;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -34,7 +31,6 @@ import kr.osc.jira.svn.rest.repositories.SubversionRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
@@ -48,14 +44,12 @@ import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -63,7 +57,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.tmatesoft.svn.core.SVNException;
-import org.zeroturnaround.zip.commons.FileUtils;
 import org.zeroturnaround.zip.commons.IOUtils;
 
 /**
@@ -73,9 +66,8 @@ import org.zeroturnaround.zip.commons.IOUtils;
  */
 @Controller
 public class JiraSVNMigrationController implements InitializingBean {
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(JiraSVNMigrationController.class);
-	
+	private static final Logger LOGGER = Logger.getLogger(JiraSVNMigrationController.class);
+
 	@Value("${jira.ip}")
 	private String jiraIPAddr;
 	@Value("${jira.port}")
@@ -104,36 +96,36 @@ public class JiraSVNMigrationController implements InitializingBean {
 	public void afterPropertiesSet() throws Exception {
 		jiraHost = new HttpHost(jiraIPAddr, jiraPort, "http");
 		credsProvider = new BasicCredentialsProvider();
-		credsProvider.setCredentials(new AuthScope(jiraHost.getHostName(),
-				jiraHost.getPort()), new UsernamePasswordCredentials(username,
-				password));
+		credsProvider.setCredentials(new AuthScope(jiraHost.getHostName(), jiraHost.getPort()), new UsernamePasswordCredentials(username, password));
 		authCache = new BasicAuthCache();
 		authCache.put(jiraHost, new BasicScheme());
+		//preprocess jiraContextPath 
+		if (jiraContextPath != null && !jiraContextPath.equals("")) {
+			if (!jiraContextPath.startsWith("/")) {
+				jiraContextPath = "/" + jiraContextPath;
+			}
+		}
 		// pattern of rest url: http://jira.osci.kr/rest/jira.svn/1.0/commits
-		jiraRestURL = jiraHost.toURI() + jiraContextPath
-				+ "/rest/jira.svn/1.0/commits";
+		jiraRestURL = jiraHost.toURI() + jiraContextPath + "/rest/jira.svn/1.0/commits";
 	}
 
 	@RequestMapping("/api/projects")
 	@ResponseBody
 	public GridJsonResponse getProjectList(GridJsonResponse json) {
 		try {
-			HttpUriRequest httpget = RequestBuilder
-					.get()
-					.setUri(new URI(jiraHost.toURI() + jiraContextPath
-							+ "/rest/api/2/project")).build();
+			HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + jiraContextPath + "/rest/api/2/project")).build();
 			String response = callAPI(httpget);
 			if (!response.equals("")) {
 				JSONArray array = new JSONArray(response);
 				List<Project> projects = new ArrayList<Project>();
 				for (int i = 0; i < array.length(); i++) {
 					JSONObject obj = array.getJSONObject(i);
-					projects.add(new Project(obj.getString("id"), obj
-							.getString("key"), obj.getString("name"), obj
-							.getString("self")));
+					projects.add(new Project(obj.getString("id"), obj.getString("key"), obj.getString("name"), obj.getString("self")));
 				}
 				json.setList(projects);
 				json.setTotal(projects.size());
+			} else {
+				json.setSuccess(false);
 			}
 		} catch (Exception ex) {
 			json.setSuccess(false);
@@ -147,18 +139,14 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@RequestMapping("/api/search")
 	@ResponseBody
 	public String search(@RequestParam("jql") String jql) throws Exception {
-		HttpUriRequest httpget = RequestBuilder
-				.get()
-				.setUri(new URI(jiraHost.toURI() + jiraContextPath
-						+ "/rest/api/2/search")).addParameter("jql", jql)
+		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + jiraContextPath + "/rest/api/2/search")).addParameter("jql", jql)
 				.build();
 		return callAPI(httpget);
 	}
 
 	@RequestMapping("/api/issues/filter")
 	@ResponseBody
-	public GridJsonResponse search(GridJsonResponse json, String projectId,
-			String fromDate, String toDate, String fields) {
+	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate, String fields) {
 		String jql = "project=" + projectId;
 		if (StringUtils.isNotEmpty(fromDate)) {
 			jql += " AND created>=\"" + fromDate + "\"";
@@ -168,11 +156,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 		}
 		try {
 			jql = URLEncoder.encode(jql, "UTF-8");
-			HttpUriRequest httpget = RequestBuilder
-					.get()
-					.setUri(new URI(jiraHost.toURI() + jiraContextPath
-							+ "/rest/api/2/search?jql=" + jql + "&fields="
-							+ fields)).build();
+			HttpUriRequest httpget = RequestBuilder.get()
+					.setUri(new URI(jiraHost.toURI() + jiraContextPath + "/rest/api/2/search?jql=" + jql + "&fields=" + fields)).build();
 			String response = callAPI(httpget);
 			if (!response.equals("")) {
 				JSONObject object = new JSONObject(response);
@@ -190,10 +175,8 @@ public class JiraSVNMigrationController implements InitializingBean {
 					try {
 						JSONObject f = obj.getJSONObject("fields");
 						summary = f.getString("summary");
-						created = f.getString("created").substring(0,
-								"yyyy-MM-dd".length());
-						updated = f.getString("updated").substring(0,
-								"yyyy-MM-dd".length());
+						created = f.getString("created").substring(0, "yyyy-MM-dd".length());
+						updated = f.getString("updated").substring(0, "yyyy-MM-dd".length());
 						status = f.getJSONObject("status").getString("name");
 					} catch (Exception e) {
 
@@ -203,8 +186,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 					List<Commit> commits = getCommits("key", keywords);
 
-					issues.add(new Issue(id, key, url, summary, created,
-							updated, status, commits));
+					issues.add(new Issue(id, key, url, summary, created, updated, status, commits));
 				}
 				json.setList(issues);
 				json.setTotal(issues.size());
@@ -225,8 +207,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 	// }
 
 	@RequestMapping("/api/svn/export")
-	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys,
-			HttpServletResponse response) {
+	public void export(@RequestParam(value = "issueKeys[]") String[] issueKeys, HttpServletResponse response) {
 		try {
 			List<Commit> commits = getCommits("key", issueKeys);
 			if (commits.size() > 0) {
@@ -234,18 +215,15 @@ public class JiraSVNMigrationController implements InitializingBean {
 				for (Commit c : commits) {
 					revisions.add(c.getRevision());
 				}
-				String zipFile = subversionRepo.export(revisions, true,
-						deleteSVNTmp);
+				String zipFile = subversionRepo.export(revisions, true, deleteSVNTmp);
 				if (StringUtils.isNotEmpty(zipFile)) {
 					String subDirSeparator = "/";
 					if (serverOs.equals("windows")) {
 						subDirSeparator = "\\";
 					}
 					response.setContentType("application/zip");
-					String fileName = zipFile.substring(zipFile
-							.lastIndexOf(subDirSeparator) + 1);
-					response.setHeader("Content-Disposition",
-							"attachment;filename=" + fileName);
+					String fileName = zipFile.substring(zipFile.lastIndexOf(subDirSeparator) + 1);
+					response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
 					File f = new File(zipFile);
 					InputStream is = new FileInputStream(f);
 					IOUtils.copy(is, response.getOutputStream());
@@ -292,8 +270,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping(value = "/api/svn/checkdiff", method = RequestMethod.POST)
 	@ResponseBody
-	public SimpleJsonResponse checkDiff(SimpleJsonResponse json,
-			HttpServletRequest req, String selectedPath, boolean isExtract,
+	public SimpleJsonResponse checkDiff(SimpleJsonResponse json, HttpServletRequest req, String selectedPath, boolean isExtract,
 			@RequestParam("file") MultipartFile file, String message) {
 		File uploadDir = new File(tmpUploadDir);
 		if (!uploadDir.exists()) {
@@ -308,9 +285,7 @@ public class JiraSVNMigrationController implements InitializingBean {
 			}
 			InputStream input = file.getInputStream();
 			Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
-			String log = subversionRepo.checkDiff(selectedPath,
-					uploadedFilePath, file.getOriginalFilename(), isExtract,
-					message);
+			String log = subversionRepo.checkDiff(selectedPath, uploadedFilePath, file.getOriginalFilename(), isExtract, message);
 			// set value for next action
 			HttpSession session = req.getSession();
 			session.setAttribute("tmp_file_name", file.getOriginalFilename());
@@ -329,16 +304,14 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping(value = "/api/svn/import", method = RequestMethod.POST)
 	@ResponseBody
-	public SimpleJsonResponse importSources(SimpleJsonResponse json,
-			HttpServletRequest req, String message, boolean isMultipleFiles) {
+	public SimpleJsonResponse importSources(SimpleJsonResponse json, HttpServletRequest req, String message, boolean isMultipleFiles) {
 		HttpSession session = req.getSession();
 		String sourceFileName = (String) session.getAttribute("tmp_file_name");
 		String selectPath = (String) session.getAttribute("selected_svn_path");
 		session.removeAttribute("tmp_file_name");
 		session.removeAttribute("selected_svn_path");
 		try {
-			subversionRepo.importSourceCodes(sourceFileName, selectPath,
-					message, isMultipleFiles, true);
+			subversionRepo.importSourceCodes(sourceFileName, selectPath, message, isMultipleFiles, true);
 		} catch (Exception ex) {
 			json.setSuccess(false);
 			json.setMsg(ex.getMessage());
@@ -347,37 +320,29 @@ public class JiraSVNMigrationController implements InitializingBean {
 		return json;
 	}
 
-	private String callAPI(HttpUriRequest request) {
+	private String callAPI(HttpUriRequest request) throws Exception {
 		String resJson = "";
-		try {
-			// Add AuthCache to the execution context
-			final HttpClientContext context = HttpClientContext.create();
-			context.setCredentialsProvider(credsProvider);
-			context.setAuthCache(authCache);
+		// Add AuthCache to the execution context
+		final HttpClientContext context = HttpClientContext.create();
+		context.setCredentialsProvider(credsProvider);
+		context.setAuthCache(authCache);
 
-			HttpClient httpclient = HttpClientBuilder.create().build();
-			HttpResponse response = httpclient.execute(request, context);
-			if (response.getStatusLine().getStatusCode() >= 400) {
-				LOGGER.error(response.getStatusLine().getStatusCode()
-						+ " - Cannot get response successfully.");
-			} else {
-				resJson = EntityUtils.toString(response.getEntity());
-			}
-			return resJson;
-		} catch (Exception ex) {
-			LOGGER.error(ex.getMessage());
+		HttpClient httpclient = HttpClientBuilder.create().build();
+		HttpResponse response = httpclient.execute(request, context);
+		if (response.getStatusLine().getStatusCode() >= 400) {
+			LOGGER.error(response.getStatusLine().getStatusCode() + " - Cannot get response successfully.");
+			throw new Exception(response.getStatusLine().getStatusCode() + " - Connection Error to " + request.getURI().toString());
+		} else {
+			resJson = EntityUtils.toString(response.getEntity());
 		}
 		return resJson;
 	}
 
-	private List<Commit> getCommits(String field, String[] keywords)
-			throws URISyntaxException {
+	private List<Commit> getCommits(String field, String[] keywords) throws Exception {
 		List<Commit> commits = new ArrayList<Commit>();
 
-		HttpUriRequest httpget = RequestBuilder.get()
-				.setUri(new URI(jiraRestURL)).addParameter("field", "key")
-				.addParameter("issueKeys", StringUtils.join(keywords, ","))
-				.build();
+		HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraRestURL)).addParameter("field", "key")
+				.addParameter("issueKeys", StringUtils.join(keywords, ",")).build();
 		String response = callAPI(httpget);
 		if (!response.equals("")) {
 			JSONArray array = new JSONArray(response);
@@ -389,10 +354,10 @@ public class JiraSVNMigrationController implements InitializingBean {
 				String message = obj.getString("message");
 				String project = obj.getString("project");
 				String repository = obj.getString("repository");
-				commits.add(new Commit(revision, key, author, message, project,
-						repository));
+				commits.add(new Commit(revision, key, author, message, project, repository));
 			}
 		}
 		return commits;
+
 	}
 }

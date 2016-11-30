@@ -3,14 +3,11 @@ package kr.osc.jira.svn.rest.repositories;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -18,12 +15,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.websocket.server.PathParam;
-
 import kr.osc.jira.svn.rest.models.SVNElement;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -36,9 +31,6 @@ import org.tmatesoft.svn.core.SVNLogEntryPath;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
-import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
-import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
-import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.internal.wc2.ng.SvnDiffGenerator;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.SVNRepository;
@@ -59,6 +51,8 @@ import org.zeroturnaround.zip.commons.FileUtils;
 
 @Repository(value = "subversionRepository")
 public class SubversionRepository implements InitializingBean {
+	private static final Logger LOGGER = Logger.getLogger(SubversionRepository.class);
+
 	@Value("${svn.url}")
 	private String url;
 	@Value("${svn.username}")
@@ -416,7 +410,7 @@ public class SubversionRepository implements InitializingBean {
 			if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
 				editor.addDir(name, null, -1);
 				editor.closeDir();
-				isEdited = true;	
+				isEdited = true;
 			}
 			//recursion
 			String[] subFileAndDirs = p.list();
