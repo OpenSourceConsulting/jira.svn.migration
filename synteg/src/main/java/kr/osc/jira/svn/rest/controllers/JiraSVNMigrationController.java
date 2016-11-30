@@ -75,6 +75,7 @@ import org.zeroturnaround.zip.commons.IOUtils;
 public class JiraSVNMigrationController implements InitializingBean {
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(JiraSVNMigrationController.class);
+	
 	@Value("${jira.ip}")
 	private String jiraIPAddr;
 	@Value("${jira.port}")
@@ -102,7 +103,6 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		jiraHost = new HttpHost(jiraIPAddr, jiraPort, "http");
-
 		credsProvider = new BasicCredentialsProvider();
 		credsProvider.setCredentials(new AuthScope(jiraHost.getHostName(),
 				jiraHost.getPort()), new UsernamePasswordCredentials(username,

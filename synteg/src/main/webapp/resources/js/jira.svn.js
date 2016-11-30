@@ -213,7 +213,7 @@ function doSVNImport() {
 						}
 					});
 				} else {
-					alert(e.msg);
+					alert(json.msg);
 					$('.ui-dialog-content').dialog('close');
 				}
 			},
@@ -267,7 +267,7 @@ function doCheckDiff() {
 					});
 
 				} else {
-					alert(e.msg);
+					alert(json.msg);
 				}
 			},
 			error : function(e) {

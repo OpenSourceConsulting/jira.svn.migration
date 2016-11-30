@@ -208,6 +208,7 @@ public class SubversionRepository implements InitializingBean {
 			}
 			children.add(element);
 		}
+
 		Collections.sort(children);
 		return children;
 	}
@@ -272,7 +273,7 @@ public class SubversionRepository implements InitializingBean {
 					sources.get(i), SVNDepth.fromRecurse(isRecursive), true, false, false, false);
 		}
 		//commit
-		commitClient.doCommit(sources.toArray(new File[0]), false, "IP-3 commit", null, null, true, false, SVNDepth.INFINITY);
+		commitClient.doCommit(sources.toArray(new File[0]), false, commitMessage, null, null, true, false, SVNDepth.INFINITY);
 		//empty upload dir & working copy
 		if (Files.exists((new File(tmpUploadDir)).toPath())) {
 			FileUtils.cleanDirectory(new File(tmpUploadDir));
@@ -294,11 +295,16 @@ public class SubversionRepository implements InitializingBean {
 	 */
 	public String checkDiff(String selectedSVNPath, String filePath, String fileName, boolean isExtract, String message) throws SVNException, IOException {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		//init for check diff
 		SvnDiffGenerator diffGenerator = new SvnDiffGenerator();
+		SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
+		svnOperationFactory.setAuthenticationManager(authManager);
+
 		SVNUpdateClient updateClient = clientManager.getUpdateClient();
 		SVNRepository repo = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(selectedSVNPath));
 		repo.setAuthenticationManager(authManager);
-		ISVNEditor editor = repo.getCommitEditor(message, null /*locks*/, true /*keepLocks*/, null /*mediator*/);
+		ISVNEditor editor = repo.getCommitEditor("[Added] " + message, null /*locks*/, true /*keepLocks*/, null /*mediator*/);
+		boolean isEdited = false; //used to check wether any files or folder is created by editor.
 		File unzipDir = new File(tmpUploadDir + fileName.replace(".zip", ""));
 		//add file
 		//check whether file is a zip file.
@@ -306,17 +312,21 @@ public class SubversionRepository implements InitializingBean {
 		if (fileName.endsWith(".zip") && isExtract) {
 			ZipUtil.unpack(new File(filePath), unzipDir);
 			for (String l : unzipDir.list()) {
-				createFileAndDir(selectedSVNPath, unzipDir.getPath(), l, editor);
+				isEdited |= createFileAndDir(selectedSVNPath, unzipDir.getPath(), l, editor);
 			}
 		} else {
 			//check exist
 			SVNNodeKind nodeKind = this.checkPath(SVNURL.parseURIEncoded(selectedSVNPath + "/" + fileName), -1);
 			if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
-				createFileAndDir(selectedSVNPath, tmpUploadDir, fileName, editor);
+				isEdited |= createFileAndDir(selectedSVNPath, tmpUploadDir, fileName, editor);
 			}
 		}
 		editor.closeDir();
-		editor.closeEdit();
+		if (isEdited) {
+			editor.closeEdit();
+		} else {
+			editor.abortEdit();
+		}
 		File workingCopy = new File(tmpWCDir);
 		//in order to check different between current source and new one, it should be working on working copy dir of svn. 
 		//check out to tmp working copy dir
@@ -333,7 +343,7 @@ public class SubversionRepository implements InitializingBean {
 		//check diff
 		svnPath = SVNURL.parseURIEncoded(selectedSVNPath);
 		diffGenerator.setBasePath(workingCopy);
-		SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
+
 		SvnDiff diff = svnOperationFactory.createDiff();
 		diff.setSources(SvnTarget.fromFile(workingCopy, SVNRevision.HEAD), SvnTarget.fromFile(workingCopy, SVNRevision.WORKING));
 		diff.setDiffGenerator(diffGenerator);
@@ -388,7 +398,8 @@ public class SubversionRepository implements InitializingBean {
 		return paths;
 	}
 
-	private void createFileAndDir(String selectedSVNPath, String path, String name, ISVNEditor editor) throws SVNException {
+	private boolean createFileAndDir(String selectedSVNPath, String path, String name, ISVNEditor editor) throws SVNException {
+		boolean isEdited = false;
 		SVNDeltaGenerator deltaGenerator = new SVNDeltaGenerator();
 		SVNNodeKind nodeKind = this.checkPath(SVNURL.parseURIEncoded(selectedSVNPath + "/" + name), -1);
 		File p = new File(path + subDirSeparator + name);//check whether the path is dir or file
@@ -399,22 +410,24 @@ public class SubversionRepository implements InitializingBean {
 				editor.textDeltaEnd(name);
 				String checksum = deltaGenerator.sendDelta(name, new ByteArrayInputStream(new byte[0]), editor, true);
 				editor.closeFile(name, checksum);
+				isEdited = true;
 			}
 		} else if (p.isDirectory()) {
 			if (nodeKind == SVNNodeKind.UNKNOWN || nodeKind == SVNNodeKind.NONE) {
 				editor.addDir(name, null, -1);
 				editor.closeDir();
+				isEdited = true;	
 			}
 			//recursion
 			String[] subFileAndDirs = p.list();
 			editor.openDir(name, -1);
 			for (String f : subFileAndDirs) {
-				createFileAndDir(selectedSVNPath + "/" + name, p.getPath(), f, editor);
+				isEdited |= createFileAndDir(selectedSVNPath + "/" + name, p.getPath(), f, editor);
 			}
 			editor.closeDir();
 
 		}
-
+		return isEdited;
 	}
 
 	/**
