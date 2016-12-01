@@ -1,7 +1,6 @@
 package kr.osc.jira.svn.rest.models;
 
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -64,7 +63,8 @@ public class SVNElement implements Comparable<SVNElement> {
 		if (lastChanged == null) {
 			return "";
 		}
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyyy-mm-dd hh:mm:ss");
+		SimpleDateFormat formatter = new SimpleDateFormat(
+				"yyyyy-mm-dd hh:mm:ss");
 		return formatter.format(lastChanged);
 	}
 

@@ -6,11 +6,15 @@ function getProjectList(selectId) {
 	$.ajax({
 		url : url,
 		success : function(json) {
-			$.each(json.list, function(k, v) {
-				options += "<option value='" + v.id + "'>" + v.key + " - "
-						+ v.name + "</option>";
-			})
-			select.html(options);
+			if (json.success) {
+				$.each(json.list, function(k, v) {
+					options += "<option value='" + v.id + "'>" + v.key + " - "
+							+ v.name + "</option>";
+				})
+				select.html(options);
+			} else {
+				alert(json.msg);
+			}
 		},
 		error : function(e) {
 			alert(e.msg);
@@ -21,7 +25,8 @@ function getProjectList(selectId) {
 function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 	var url = CONTEXT_PATH + "/api/issues/filter";
 	var data = [];
-	if (projectId == 0) { // maybe 0 or "0"
+
+	if (projectId == 0 || projectId === null) { // maybe 0 or "0"
 		$("#message").text("Project is required");
 		$("#message").dialog({
 			modal : true,
@@ -33,35 +38,47 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 		});
 		return;
 	} else {
-		$.get(url, {
-			"projectId" : projectId,
-			"fromDate" : fromDate,
-			"toDate" : toDate,
-			"fields" : fields
-		}, function(json) {
-			$.each(json.list, function(k, v) {
-				var commits = "";
-				$.each(v.commits, function(key, value) {
-					commits += "Revision:" + value.revision + "-["
-							+ value.author + "] " + value.message + "<br/>";
-				});
-				if (commits === "") {
-					commits = "No commit.";
+		$.ajax({
+			url : url,
+			data : {
+				"projectId" : projectId,
+				"fromDate" : fromDate,
+				"toDate" : toDate,
+				"fields" : fields
+			},
+			success : function(json) {
+				if (json.success) {
+					$.each(json.list, function(k, v) {
+						var commits = "";
+						$.each(v.commits, function(key, value) {
+							commits += "Revision:" + value.revision + "-["
+									+ value.author + "] " + value.message
+									+ "<br/>";
+						});
+						if (commits === "") {
+							commits = "No commit.";
+						}
+						data.push({
+							id : v.id,
+							key : v.key,
+							summary : v.summary,
+							url : v.url,
+							created : v.created,
+							last_updated : v.updated,
+							status : v.status,
+							commits : commits
+						});
+					});
+					$("#" + gridId).jqGrid('setGridParam', {
+						data : data
+					}).trigger('reloadGrid');
+				} else {
+					alert(json.msg);
 				}
-				data.push({
-					id : v.id,
-					key : v.key,
-					summary : v.summary,
-					url : v.url,
-					created : v.created,
-					last_updated : v.updated,
-					status : v.status,
-					commits : commits
-				});
-			});
-			$("#" + gridId).jqGrid('setGridParam', {
-				data : data
-			}).trigger('reloadGrid');
+			},
+			error : function(e) {
+				alert(e.msg);
+			}
 		});
 	}
 }
@@ -92,25 +109,48 @@ function exportSourceCode(issueIds) {
 function generateSVNTree(treeId, callback) {
 	var tree = $("#" + treeId);
 	var url = CONTEXT_PATH + "/api/svn/tree";
-	$.get(url, function(json) {
-
-		var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
-				+ json.resource + '</span>';
-		rootNode += "<span class='hidden'>" + json.url + "</span>";
-		var childNodes = "<ul>"
-		childNodes += listChildNodes(json.childNodes);
-		childNodes += "</ul>";
-		rootNode += childNodes;
-		rootNode += "</li>";
-		tree.html("<ul>" + rootNode + "</ul>");
-		callback();
-	});
+	$
+			.ajax({
+				type : "GET",
+				url : url,
+				success : function(json) {
+					if (json.success) {						
+						var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
+								+ json.data.resource + '</span>';
+						rootNode += "<span class='hidden'>" + json.data.url
+								+ "</span>";
+						var childNodes = "<ul>"
+						childNodes += listChildNodes(json.data.childNodes);
+						childNodes += "</ul>";
+						rootNode += childNodes;
+						rootNode += "</li>";
+						tree.html("<ul>" + rootNode + "</ul>");
+						callback();
+					} else {
+						alert(json.msg);
+					}
+				},
+				error : function(json) {
+					alert(json.msg);
+				}
+			});
 }
 function loadChildNodes(parentPath, callback) {
 	var url = CONTEXT_PATH + "/api/svn/tree/load?parent=" + parentPath;
-	$.get(url, function(json) {
-		var childNodes = listChildNodes(json.list);
-		callback(childNodes);
+	$.ajax({
+		type : "GET",
+		url : url,
+		success : function(json) {
+			if (json.success) {
+				var childNodes = listChildNodes(json.list);
+				callback(childNodes);
+			} else {
+				alert(json.msg);
+			}
+		},
+		error : function(e) {
+			alert(e.msg);
+		}
 	});
 }
 function listChildNodes(childNodes) {
@@ -148,50 +188,54 @@ function listChildNodes(childNodes) {
 	return result;
 }
 
-function submitImportForm() {
-	var submit = false;
-	var selectPathType = $("#selectedType").val();
-	if (selectPathType === "file") {
-		$("#message-dialog").attr("title", "Warning");
-		$("#message-dialog")
-				.text(
-						"You are selecting a file on subversion. It will be deleted and replaced to the uploaded file.");
-		$("#message-dialog").dialog({
-			modal : true,
-			buttons : {
-				Ok : function() {
-					submit = true;
-					$(this).dialog("close");
-					doSubmit();
-				},
-				Cancel : function() {
-					submit = false;
-					$(this).dialog("close");
+function doSVNImport() {
+	var url = CONTEXT_PATH + "/api/svn/import";
+	Pace.track(function() { // for progress bar
+		$.ajax({
+			type : "POST",
+			url : url,
+			data : {
+				"message" : $("#message").val(),
+				"isMultipleFiles" : $("#extractZip").is(":checked")
+			},
+			success : function(json) {
+				var dialog = null;
+				if (json.success) {
+					$("#message-dialog").attr("title", "Information");
+					$("#message-dialog").text("Upload is done.");
+					dialog = $("#message-dialog").dialog({
+						modal : true,
+						buttons : {
+							Ok : function() {
+								$(this).dialog("close");
+								window.location.reload();
+							}
+						}
+					});
+				} else {
+					alert(json.msg);
+					$('.ui-dialog-content').dialog('close');
 				}
+			},
+			error : function(e) {
+				alert(e.msg);
+				$('.ui-dialog-content').dialog('close');
 			}
 		});
-	} else {
-		doSubmit();
-	}
+	});
 }
 
-function doSubmit() {
-	if ($("#selectedPath").val() === "") {
-		alert("Please select path.");
+function doCheckDiff() {
+	if (!validate()) {
 		return;
 	}
-	if ($("#file").val() === "") {
-		alert("Please select imported file.");
-		return;
-	}
-
 	var formData = new FormData();
 	formData.append("selectedPath", $("#selectedPath").val());
 	formData.append("message", $("#message").val());
 	formData.append("file", $("#file")[0].files[0]);
 	formData.append("isExtract", $("#extractZip").is(":checked"));
-	var url = CONTEXT_PATH + "/api/svn/import";
-	Pace.track(function() { //for progress bar
+	var url = CONTEXT_PATH + "/api/svn/checkdiff";
+	Pace.track(function() { // for progress bar
 		$.ajax({
 			type : "POST",
 			url : url,
@@ -201,23 +245,37 @@ function doSubmit() {
 			enctype : 'multipart/form-data',
 			success : function(json) {
 				if (json.success) {
-					$("#message-dialog").attr("title", "Information");
-					$("#message-dialog").text("Import files successfully.");
-					$("#message-dialog").dialog({
+					$("#log_dialog_content").text(json.data);
+					$('#log_dialog').dialog({
+						width : 700,
+						height : 700,
 						modal : true,
-						buttons : {
-							Ok : function() {
-								$(this).dialog("close");
-								window.location.reload();
+						title : "SVN Diff",
+						buttons : [ {
+							html : "Merge & Commit",
+							"class" : "btn btn-primary",
+							click : function() {
+								doSVNImport();
 							}
-						}
+						}, {
+							html : "<i class='fa fa-times'></i>&nbsp; Cancel",
+							"class" : "btn btn-default",
+							click : function() {
+								$(this).dialog("close");
+							}
+						} ]
 					});
+
+				} else {
+					alert(json.msg);
 				}
+			},
+			error : function(e) {
+				alert(e.msg);
 			}
 		});
 	});
 }
-
 function addReloadAction(parentSelector) {
 	$(parentSelector).find(".fa-folder").parent().css("cursor", "pointer");
 	$(parentSelector).find('ul').attr('role', 'group');
@@ -262,4 +320,18 @@ function addReloadAction(parentSelector) {
 		}
 	})
 
+}
+
+function validate() {
+
+	if ($("#selectedPath").val() === "" || $("#selectedType").val() !== "dir") {
+		alert("Please select correct directory path.");
+		return false;
+	}
+
+	if ($("#file").val() === "") {
+		alert("Please select imported file.");
+		return false;
+	}
+	return true;
 }

@@ -228,7 +228,7 @@ th small {
 									</section>
 								</fieldset>
 								<footer>
-									<button id="importBtn" class="btn btn-primary">Import</button>
+									<button id="checkBtn" class="btn btn-warning" type="button">Check</button>
 								</footer>
 							</form>
 
@@ -248,7 +248,7 @@ th small {
 	<div class="page-footer">
 		<div class="row">
 			<div class="col-xs-12 col-sm-6 text-right">
-				<span class="txt-color-white">Jira SVN migration 1.0 </span>
+				<span class="txt-color-white">Jira SVN Integration 1.0 </span>
 			</div>
 
 		</div>
@@ -302,50 +302,50 @@ th small {
 	<script src="resources/js/jira.svn.js"></script>
 
 	<script type="text/javascript">
-	
-		$(document)
-				.ready(
-						function() {
-// 							paceOptions = {
-// 							   ajax: {
-// 							         trackMethods: ['GET', 'POST']
-// 							   }
-// 							}
-						$(document).ajaxStart(function() {
-							    $('body').addClass('loading');
-							});
-							$(document).ajaxStop(function() {
-							    $('body').removeClass('loading');
-							});
-							//gen svn tree view
-							generateSVNTree("svnTree", function() {
-										// PAGE RELATED SCRIPTS
-										$('.tree > ul').attr('role', 'tree')
-												.find('ul').attr('role',
-														'group');
-										$('.tree > ul > li')
-												.find('li:has(ul)')
-												.addClass('parent_li')
-												.attr('role', 'treeitem');
-										//do a click for root node
-										$('.tree').find('.fa-database').parent().css("cursor","pointer");
-										$('.tree').find('.fa-database').parent().on("click", function(){
-											var selecteds = $('.tree > ul > li').find("span.hidden")[0];
-											var selectedPath = $(selecteds).text();
-											$("#selectedPath").val(selectedPath);
-										});
-										//show tree view
-										$('.tree').find('li:has(ul)').find(' > ul > li').show("fast");
-										addReloadAction(".tree");
-									});
-							
-							$("#importForm").submit(function(e) {
-								e.preventDefault();
-								submitImportForm(this);
-							});
-						});
+		$(document).ready(
+				function() {
+		
+					$(document).ajaxStart(function() {
+						$('body').addClass('loading');
+					});
+					$(document).ajaxStop(function() {
+						$('body').removeClass('loading');
+					});
+					//gen svn tree view
+					generateSVNTree("svnTree", function() {
+						// PAGE RELATED SCRIPTS
+						$('.tree > ul').attr('role', 'tree').find('ul').attr(
+								'role', 'group');
+						$('.tree > ul > li').find('li:has(ul)').addClass(
+								'parent_li').attr('role', 'treeitem');
+						//do a click for root node
+						$('.tree').find('.fa-database').parent().css("cursor",
+								"pointer");
+						$('.tree').find('.fa-database').parent().on(
+								"click",
+								function() {
+									var selecteds = $('.tree > ul > li').find(
+											"span.hidden")[0];
+									var selectedPath = $(selecteds).text();
+									$("#selectedPath").val(selectedPath);
+									$("#selectedType").val("dir");
+								});
+						//show tree view
+						$('.tree').find('li:has(ul)').find(' > ul > li').show(
+								"fast");
+						addReloadAction(".tree");
+					});
+
+					$("#checkBtn").click(function() {
+						doCheckDiff();
+						return;
+					});
+				});
 	</script>
 	<div id="message-dialog"></div>
+	<div id="log_dialog">
+		<p id="log_dialog_content" style="white-space: pre-wrap;"></p>
+	</div>
 </body>
 
 </html>
