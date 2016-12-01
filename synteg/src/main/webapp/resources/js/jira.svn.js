@@ -245,7 +245,7 @@ function doCheckDiff() {
 			enctype : 'multipart/form-data',
 			success : function(json) {
 				if (json.success) {
-					$("#log_dialog_content").html(json.data);
+					$("#log_dialog_content").text(json.data);
 					$('#log_dialog').dialog({
 						width : 700,
 						height : 700,
