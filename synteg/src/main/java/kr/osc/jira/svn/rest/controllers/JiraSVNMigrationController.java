@@ -3,9 +3,11 @@
  */
 package kr.osc.jira.svn.rest.controllers;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -82,9 +84,11 @@ public class JiraSVNMigrationController implements InitializingBean {
 	private String serverOs;
 	@Value("${svn.tmp.upload.dir}")
 	private String tmpUploadDir;
-
 	@Value("${svn.tmp.delete}")
 	private boolean deleteSVNTmp;
+	@Value("${svn.export.callback.shell}")
+	private String exportCallbackShell;
+
 	private HttpHost jiraHost;
 	private CredentialsProvider credsProvider;
 	private AuthCache authCache;
@@ -215,7 +219,10 @@ public class JiraSVNMigrationController implements InitializingBean {
 				for (Commit c : commits) {
 					revisions.add(c.getRevision());
 				}
-				String zipFile = subversionRepo.export(revisions, true, deleteSVNTmp);
+				//there are two results returned: zip file path and tmp dir contains exported files.
+				String[] result = subversionRepo.export(revisions, true, deleteSVNTmp);
+				String zipFile = result[0];
+				String tempExportDir = result[1];
 				if (StringUtils.isNotEmpty(zipFile)) {
 					String subDirSeparator = "/";
 					if (serverOs.equals("windows")) {
@@ -231,6 +238,16 @@ public class JiraSVNMigrationController implements InitializingBean {
 					is.close();
 					// delete on server
 					f.delete();
+
+					//run callback shell script
+					ProcessBuilder pb = new ProcessBuilder(exportCallbackShell, tempExportDir);
+					Process p = pb.start();
+					BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					String line = null;
+					while ((line = reader.readLine()) != null) {
+						System.out.println("[Export Shell]" + line);
+						LOGGER.info("[Export Shell]" + line);
+					}
 				}
 			}
 		} catch (Exception ex) {

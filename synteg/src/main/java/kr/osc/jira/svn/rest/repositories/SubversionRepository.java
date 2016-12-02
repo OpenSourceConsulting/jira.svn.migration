@@ -137,8 +137,8 @@ public class SubversionRepository implements InitializingBean {
 	 * @throws SVNException
 	 * @throws IOException
 	 */
-	public String export(List<Integer> revisions, boolean overwrite, boolean deleteTmp) throws SVNException, IOException {
-
+	public String[] export(List<Integer> revisions, boolean overwrite, boolean deleteTmp) throws SVNException, IOException {
+		String[] result = new String[2];
 		SVNDepth dept = SVNDepth.INFINITY;
 		SVNUpdateClient updateClient = clientManager.getUpdateClient();
 		List<Pair> changedPaths = getChangedPaths(revisions);
@@ -168,7 +168,9 @@ public class SubversionRepository implements InitializingBean {
 		}
 
 		String zipFileName = svnExportZipName;
-		return createZipFile(new File(tmpPath).getPath(), zipFileName, deleteTmp);
+		result[0] = createZipFile(new File(tmpPath).getPath(), zipFileName, deleteTmp);
+		result[1] = tmpPath;
+		return result;
 	}
 
 	private String createSubDirs(String tmpPath, String svnFilePath) {

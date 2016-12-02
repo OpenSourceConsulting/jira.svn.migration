@@ -42,11 +42,6 @@ public class MigrationBoot extends WebMvcConfigurerAdapter {
 		private SecurityProperties security;
 
 		@Override
-		public void configure(WebSecurity web) throws Exception {
-			web.ignoring().antMatchers("/", "/index.html", "/app.js", "/auth/notLogin*", "/auth/loginFail*", "/auth/accessDenied*", "/auth/onAfterLogout*");
-		}
-
-		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 
 			http.anonymous();
