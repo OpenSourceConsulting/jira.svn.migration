@@ -114,7 +114,7 @@ function generateSVNTree(treeId, callback) {
 				type : "GET",
 				url : url,
 				success : function(json) {
-					if (json.success) {						
+					if (json.success) {
 						var rootNode = '<li><span><i class="fa fa-lg fa-database"></i>&nbsp;'
 								+ json.data.resource + '</span>';
 						rootNode += "<span class='hidden'>" + json.data.url
@@ -231,8 +231,10 @@ function doCheckDiff() {
 	}
 	var formData = new FormData();
 	formData.append("selectedPath", $("#selectedPath").val());
-	formData.append("message", $("#message").val());
 	formData.append("file", $("#file")[0].files[0]);
+	formData.append("fileLocation", $('input[name="file-location"]:checked')
+			.val().trim());
+	formData.append("serverFilePath", $("#input-file-server").val().trim());
 	formData.append("isExtract", $("#extractZip").is(":checked"));
 	var url = CONTEXT_PATH + "/api/svn/checkdiff";
 	Pace.track(function() { // for progress bar
@@ -243,6 +245,7 @@ function doCheckDiff() {
 			processData : false,
 			contentType : false,
 			enctype : 'multipart/form-data',
+
 			success : function(json) {
 				if (json.success) {
 					$("#log_dialog_content").text(json.data);
@@ -328,9 +331,14 @@ function validate() {
 		alert("Please select correct directory path.");
 		return false;
 	}
-
-	if ($("#file").val() === "") {
+	if ($("#file").val() === ""
+			&& $('input[name="file-location"]:checked').val() === "local") {
 		alert("Please select imported file.");
+		return false;
+	}
+	if ($("#input-file-server").val() === ""
+			&& $('input[name="file-location"]:checked').val() === "server") {
+		alert("Please enter your file location in server.");
 		return false;
 	}
 	return true;

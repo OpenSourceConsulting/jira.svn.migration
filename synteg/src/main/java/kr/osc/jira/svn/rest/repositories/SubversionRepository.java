@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -235,8 +236,8 @@ public class SubversionRepository implements InitializingBean {
 		return zipFile;
 	}
 
-	public long importSourceCodes(String sourceFileName, String destinationPath, String commitMessage, boolean isMultipleFiles, boolean isRecursive)
-			throws SVNException, IOException {
+	public long importSourceCodes(String filePath, boolean isLocalFiles, String destinationPath, String commitMessage, boolean isMultipleFiles,
+			boolean isRecursive) throws SVNException, IOException {
 
 		SVNCommitClient commitClient = clientManager.getCommitClient();
 		File workingCopy = new File(tmpWCDir);
@@ -245,16 +246,30 @@ public class SubversionRepository implements InitializingBean {
 		List<File> sources = new ArrayList<File>();
 		SVNDiffClient diffClient = clientManager.getDiffClient();
 		//look for changed files & dir
-		if (sourceFileName.contains(".zip") && isMultipleFiles) {
-			File unzipDir = new File(tmpUploadDir + subDirSeparator + sourceFileName.replace(".zip", ""));
-			String[] fileAndSubDirs = unzipDir.list();
-			for (String f : fileAndSubDirs) {
-				sources.add(new File(workingCopy.getPath() + subDirSeparator + f));
-				svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + f));
+		File serverPath = new File(filePath);
+		if (isLocalFiles) {
+			if (filePath.contains(".zip") && isMultipleFiles) {
+				File unzipDir = new File(filePath.replace(".zip", ""));
+				String[] fileAndSubDirs = unzipDir.list();
+				for (String f : fileAndSubDirs) {
+					sources.add(new File(workingCopy.getPath() + subDirSeparator + f));
+					svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + f));
+				}
+			} else {
+				sources.add(new File(workingCopy.getPath() + subDirSeparator + serverPath.getName()));
+				svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + serverPath.getName()));
 			}
 		} else {
-			sources.add(new File(workingCopy.getPath() + subDirSeparator + sourceFileName));
-			svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + sourceFileName));
+			if (serverPath.isDirectory()) {
+				String[] fileAndSubDirs = serverPath.list();
+				for (String f : fileAndSubDirs) {
+					sources.add(new File(workingCopy.getPath() + subDirSeparator + f));
+					svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + f));
+				}
+			} else {
+				sources.add(new File(workingCopy.getPath() + subDirSeparator + serverPath.getName()));
+				svnURLs.add(SVNURL.parseURIEncoded(destinationPath + "/" + serverPath.getName()));
+			}
 		}
 		//merge
 		for (int i = 0; i < svnURLs.size(); i++) {
@@ -276,13 +291,14 @@ public class SubversionRepository implements InitializingBean {
 	 * Check diff between file in svn repo and new one.
 	 * 
 	 * @param selectedSVNPath
+	 * @param isLocalFile
 	 * @param filePath
 	 * @param isExtract
 	 * @return
 	 * @throws SVNException
 	 * @throws IOException
 	 */
-	public String checkDiff(String selectedSVNPath, String filePath, String fileName, boolean isExtract, String message) throws SVNException, IOException {
+	public String checkDiff(String selectedSVNPath, boolean isLocalFile, String filePath, boolean isExtract) throws SVNException, IOException {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		//init for check diff
 		SvnDiffGenerator diffGenerator = new SvnDiffGenerator();
@@ -292,7 +308,6 @@ public class SubversionRepository implements InitializingBean {
 		SVNWCClient wcClient = clientManager.getWCClient();
 		File[] addFiles = null;
 
-		File unzipDir = new File(tmpUploadDir + fileName.replace(".zip", ""));
 		File workingCopy = new File(tmpWCDir);
 		//in order to check different between current source and new one, it should be working on working copy dir of svn. 
 		//check out to tmp working copy dir
@@ -300,20 +315,41 @@ public class SubversionRepository implements InitializingBean {
 			FileUtils.cleanDirectory(new File(tmpWCDir));
 		}
 		updateClient.doCheckout(SVNURL.parseURIEncoded(selectedSVNPath), workingCopy, SVNRevision.HEAD, SVNRevision.HEAD, SVNDepth.INFINITY, false);
-		//copy changed files to working copy
-		if (fileName.endsWith(".zip") && isExtract) {
-			ZipUtil.unpack(new File(filePath), unzipDir);
-			addFiles = new File[unzipDir.list().length];
-			FileUtils.copyDirectory(unzipDir, workingCopy);
-			int index = 0; //index for loop
-			for (String f : unzipDir.list()) {
-				addFiles[index] = new File(workingCopy + subDirSeparator + f);
-				index++;
+		if (isLocalFile) {
+			File file = new File(filePath);
+			String fileName = file.getName();
+			//copy changed files to working copy
+			if (fileName.endsWith(".zip") && isExtract) {
+				File unzipDir = new File(tmpUploadDir + fileName.replace(".zip", ""));
+				ZipUtil.unpack(file, unzipDir);
+				addFiles = new File[unzipDir.list().length];
+				FileUtils.copyDirectory(unzipDir, workingCopy);
+				int index = 0; //index for loop
+				for (String f : unzipDir.list()) {
+					addFiles[index] = new File(workingCopy + subDirSeparator + f);
+					index++;
+				}
+			} else {
+				addFiles = new File[1];
+				FileUtils.copyFileToDirectory(new File(tmpUploadDir + subDirSeparator + fileName), workingCopy);
+				addFiles[0] = new File(workingCopy + subDirSeparator + fileName);
 			}
-		} else {
-			addFiles = new File[1];
-			FileUtils.copyFileToDirectory(new File(tmpUploadDir + subDirSeparator + fileName), workingCopy);
-			addFiles[0] = new File(workingCopy + subDirSeparator + fileName);
+		} else { //copy file from server to working copy dir
+			File serverPath = new File(filePath);
+			if (serverPath.isFile()) {
+				addFiles = new File[1];
+				FileUtils.copyFileToDirectory(serverPath, workingCopy);
+				addFiles[0] = new File(workingCopy + subDirSeparator + serverPath.getName());
+			} else if (serverPath.isDirectory()) {
+				FileUtils.copyDirectory(serverPath, workingCopy);
+				int index = 0; //index for loop
+				addFiles = new File[serverPath.list().length];
+				for (String f : serverPath.list()) {
+					addFiles[index] = new File(workingCopy + subDirSeparator + f);
+					index++;
+				}
+			}
+
 		}
 		//add addfiles to working copy (in client repo only)
 		wcClient.doAdd(addFiles, true, false, false, SVNDepth.INFINITY, false, false, false);
@@ -325,7 +361,7 @@ public class SubversionRepository implements InitializingBean {
 		diff.setOutput(os);
 		diff.run();
 		svnOperationFactory.dispose();
-		return os.toString();
+		return os.toString("UTF-8");
 	}
 
 	private List<Pair> getChangedPaths(List<Integer> revisions) throws SVNException {

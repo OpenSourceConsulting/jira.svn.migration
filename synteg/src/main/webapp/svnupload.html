@@ -25,17 +25,13 @@
 	href="resources/css/smartadmin-skins.min.css">
 
 <!-- We recommend you use "your_style.css" to override SmartAdmin
-		specific styles this will also ensure you retrain your customization with each SmartAdmin update.
-		<link rel="stylesheet" type="text/css" media="screen" href="css/your_style.css"> -->
+			specific styles this will also ensure you retrain your customization with each SmartAdmin update.
+			<link rel="stylesheet" type="text/css" media="screen" href="css/your_style.css"> -->
 
 <!-- #FAVICONS -->
 <link rel="shortcut icon" href="resources/img/favicon.png"
 	type="image/x-icon">
 <link rel="icon" href="resources/img/favicon.png" type="image/x-icon">
-
-<!-- #GOOGLE FONT -->
-<link rel="stylesheet"
-	href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,300,400,700">
 
 <style>
 .show-grid [class^="col-"] {
@@ -182,9 +178,9 @@ th small {
 			<section id="widget-svn">
 				<div class="well">
 					<div class="row show-grid">
-						<div class="col-sm-3" style="height: 400px;">
+						<div class="col-sm-3" style="height: 415px;">
 							<div class="tree" id="svnTree"
-								style="overflow: scroll; height: 400px;"></div>
+								style="overflow: scroll; height: 410px;"></div>
 						</div>
 						<div class="col-md-9" style="height: 400px;">
 
@@ -202,21 +198,40 @@ th small {
 											correlative one in tree view.</div>
 									</section>
 									<section>
-										<label class="label">Source code</label>
-										<div class="input input-file">
+										<label class="label">Source code </label>
+										<div class="inline-group">
+											<label class="radio"
+												title="Browse your files in local machine"> <input
+												type="radio" name="file-location" checked=""
+												id="file-location-local" value="local"> <i></i>Local
+											</label> <label class="radio"
+												title="Enter your absolute path on server"> <input
+												type="radio" name="file-location" id="file-location-server"
+												value="server"> <i></i>Server
+											</label>
+										</div>
+									</section>
+									<section>
+										<div class="input input-file" id="input-file-local-div">
 											<span class="button"><input type="file" id="file"
 												name="file"
 												onchange="this.parentNode.nextSibling.value = this.value">Browse</span><input
 												type="text"
-												placeholder="Browse a *.zip file to import a directory."
+												placeholder="Browse a *.zip file if you want to import mutilple files."
 												readonly="">
+										</div>
+										<div class="input" style="margin-top: 5px; display: none;"
+											id="input-file-server-div">
+											<input type="text"
+												placeholder="Enter your absolute path on server."
+												id="input-file-server" disabled="disabled">
 										</div>
 									</section>
 									<section>
-										<label class="checkbox"> <input type="checkbox"
-											name="checkbox" id="extractZip"> <i></i>Extract and
-											upload all contained files and folders if the *.zip file is
-											uploaded.
+										<label class="checkbox" id="extractZipCheckbox"> <input
+											type="checkbox" name="checkbox" id="extractZip"> <i></i>Extract
+											and upload all contained files and folders if the *.zip file
+											is uploaded.
 										</label>
 									</section>
 									<section>
@@ -258,25 +273,9 @@ th small {
 	<!-- PACE LOADER - turn this on if you want ajax loading to show (caution: uses lots of memory on iDevices)-->
 	<script data-pace-options='{ "restartOnRequestAfter": true }'
 		src="resources/js/plugin/pace/pace.min.js"></script>
-
-	<!-- Link to Google CDN's jQuery + jQueryUI; fall back to local -->
-	<script
-		src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-	<script>
-		if (!window.jQuery) {
-			document
-					.write('<script src="js/libs/jquery-2.1.1.min.js"><\/script>');
-		}
-	</script>
-
-	<script
-		src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-	<script>
-		if (!window.jQuery.ui) {
-			document
-					.write('<script src="js/libs/jquery-ui-1.10.3.min.js"><\/script>');
-		}
-	</script>
+	
+	<script src="resources/js/jquery-2.1.1.min.js"></script>
+	<script src="resources/js/jquery-ui.min.js"></script>
 
 	<!-- BOOTSTRAP JS -->
 	<script src="resources/js/bootstrap/bootstrap.min.js"></script>
@@ -304,7 +303,7 @@ th small {
 	<script type="text/javascript">
 		$(document).ready(
 				function() {
-		
+
 					$(document).ajaxStart(function() {
 						$('body').addClass('loading');
 					});
@@ -340,6 +339,33 @@ th small {
 						doCheckDiff();
 						return;
 					});
+
+					//handle file location
+					$('input[name="file-location"]:radio').change(
+							function() {
+								var location = $(this).val();
+								if (location === "local") {
+									$("#input-file-local-div").css("display",
+											"block");
+									$("#input-file-server-div").css("display",
+											"none");
+									$("#input-file-server").attr("disabled",
+											"disabled");
+									$("#extractZipCheckbox").css("display",
+											"block");
+								} else {
+									$("#extractZipCheckbox").css("display",
+											"none");
+									$("#input-file-server-div").css("display",
+											"block");
+									$("#input-file-server").removeAttr(
+											"disabled");
+									$("#input-file-local-div").css("display",
+											"none");
+								}
+
+							});
+
 				});
 	</script>
 	<div id="message-dialog"></div>

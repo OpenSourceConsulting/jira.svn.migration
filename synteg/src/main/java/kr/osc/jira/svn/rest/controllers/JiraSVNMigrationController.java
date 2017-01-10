@@ -56,6 +56,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.tmatesoft.svn.core.SVNException;
@@ -240,13 +241,15 @@ public class JiraSVNMigrationController implements InitializingBean {
 					f.delete();
 
 					//run callback shell script
-					ProcessBuilder pb = new ProcessBuilder(exportCallbackShell, tempExportDir);
-					Process p = pb.start();
-					BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-					String line = null;
-					while ((line = reader.readLine()) != null) {
-						System.out.println("[Export Shell]" + line);
-						LOGGER.info("[Export Shell]" + line);
+					if (!exportCallbackShell.equals("")) {
+						ProcessBuilder pb = new ProcessBuilder(exportCallbackShell, tempExportDir);
+						Process p = pb.start();
+						BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+						String line = null;
+						while ((line = reader.readLine()) != null) {
+							System.out.println("[Export Shell]" + line);
+							LOGGER.info("[Export Shell]" + line);
+						}
 					}
 				}
 			}
@@ -288,25 +291,42 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@RequestMapping(value = "/api/svn/checkdiff", method = RequestMethod.POST)
 	@ResponseBody
 	public SimpleJsonResponse checkDiff(SimpleJsonResponse json, HttpServletRequest req, String selectedPath, boolean isExtract,
-			@RequestParam("file") MultipartFile file, String message) {
-		File uploadDir = new File(tmpUploadDir);
-		if (!uploadDir.exists()) {
-			uploadDir.mkdir();
-		}
+			@RequestPart(value = "file", required = false) MultipartFile file, String fileLocation, String serverFilePath) {
+		String uploadedFilePath = "";
+		boolean isLocalFile = false;
 		try {
-			String uploadedFilePath = tmpUploadDir + file.getOriginalFilename();
-			Path folder = Paths.get(uploadedFilePath);
-			Path path = folder;
-			if (!Files.exists(folder, LinkOption.values())) {
-				path = Files.createFile(folder);
+			if (fileLocation.equals("local")) {
+				isLocalFile = true;
+				File uploadDir = new File(tmpUploadDir);
+				if (!uploadDir.exists()) {
+					uploadDir.mkdir();
+				}
+				uploadedFilePath = tmpUploadDir + file.getOriginalFilename();
+				File f = new File(uploadedFilePath);
+				Path path = f.toPath();
+				if (!Files.exists(path, LinkOption.values())) {
+					path = Files.createFile(path);
+				}
+				InputStream input = file.getInputStream();
+				Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
+			} else {
+				isLocalFile = false;
+				uploadedFilePath = serverFilePath;
+				File f = new File(uploadedFilePath);
+				Path path = f.toPath();
+				if (!Files.exists(path, LinkOption.values())) {
+					json.setSuccess(false);
+					json.setMsg("The file does not exist on server.");
+					return json;
+				}
 			}
-			InputStream input = file.getInputStream();
-			Files.copy(input, path, StandardCopyOption.REPLACE_EXISTING);
-			String log = subversionRepo.checkDiff(selectedPath, uploadedFilePath, file.getOriginalFilename(), isExtract, message);
+
+			String log = subversionRepo.checkDiff(selectedPath, isLocalFile, uploadedFilePath, isExtract);
 			// set value for next action
 			HttpSession session = req.getSession();
-			session.setAttribute("tmp_file_name", file.getOriginalFilename());
-			session.setAttribute("selected_svn_path", selectedPath);
+			session.setAttribute("filePath", uploadedFilePath);
+			session.setAttribute("isLocalFile", isLocalFile);
+			session.setAttribute("selectedSVNPath", selectedPath);
 			if (log.equals("")) {
 				log = "There is no changes.";
 			}
@@ -323,12 +343,14 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@ResponseBody
 	public SimpleJsonResponse importSources(SimpleJsonResponse json, HttpServletRequest req, String message, boolean isMultipleFiles) {
 		HttpSession session = req.getSession();
-		String sourceFileName = (String) session.getAttribute("tmp_file_name");
-		String selectPath = (String) session.getAttribute("selected_svn_path");
-		session.removeAttribute("tmp_file_name");
-		session.removeAttribute("selected_svn_path");
+		String filePath = (String) session.getAttribute("filePath");
+		String selectPath = (String) session.getAttribute("selectedSVNPath");
+		boolean isLocalFile = (boolean) session.getAttribute("isLocalFile");
+		session.removeAttribute("filePath");
+		session.removeAttribute("isLocalFile");
+		session.removeAttribute("selectedSVNPath");
 		try {
-			subversionRepo.importSourceCodes(sourceFileName, selectPath, message, isMultipleFiles, true);
+			subversionRepo.importSourceCodes(filePath, isLocalFile, selectPath, message, isMultipleFiles, true);
 		} catch (Exception ex) {
 			json.setSuccess(false);
 			json.setMsg(ex.getMessage());
