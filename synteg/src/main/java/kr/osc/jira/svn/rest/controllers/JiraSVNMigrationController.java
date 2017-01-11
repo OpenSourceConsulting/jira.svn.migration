@@ -13,9 +13,9 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +28,7 @@ import kr.osc.jira.svn.rest.models.Commit;
 import kr.osc.jira.svn.rest.models.Issue;
 import kr.osc.jira.svn.rest.models.Project;
 import kr.osc.jira.svn.rest.models.SVNElement;
+import kr.osc.jira.svn.rest.models.Status;
 import kr.osc.jira.svn.rest.repositories.SubversionRepository;
 
 import org.apache.commons.lang3.StringUtils;
@@ -114,6 +115,32 @@ public class JiraSVNMigrationController implements InitializingBean {
 		jiraRestURL = jiraHost.toURI() + jiraContextPath + "/rest/jira.svn/1.0/commits";
 	}
 
+	@RequestMapping("api/statuses")
+	@ResponseBody
+	public GridJsonResponse getIssueStatuses(GridJsonResponse json) {
+		try {
+			HttpUriRequest httpget = RequestBuilder.get().setUri(new URI(jiraHost.toURI() + jiraContextPath + "/rest/api/2/status")).build();
+			String response = callAPI(httpget);
+			if (!response.equals("")) {
+				JSONArray array = new JSONArray(response);
+				List<Status> statuses = new ArrayList<Status>();
+				for (int i = 0; i < array.length(); i++) {
+					JSONObject obj = array.getJSONObject(i);
+					statuses.add(new Status(obj.getString("id"), obj.getString("name")));
+				}
+				json.setList(statuses);
+				json.setTotal(statuses.size());
+			} else {
+				json.setSuccess(false);
+			}
+		} catch (Exception ex) {
+			json.setSuccess(false);
+			json.setMsg(ex.getMessage());
+			LOGGER.error(ex.getMessage());
+		}
+		return json;
+	}
+
 	@RequestMapping("/api/projects")
 	@ResponseBody
 	public GridJsonResponse getProjectList(GridJsonResponse json) {
@@ -151,13 +178,17 @@ public class JiraSVNMigrationController implements InitializingBean {
 
 	@RequestMapping("/api/issues/filter")
 	@ResponseBody
-	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate, String fields) {
+	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate,
+			@RequestParam(value = "statuses[]", required = false) Integer[] statuses, String fields) {
 		String jql = "project=" + projectId;
 		if (StringUtils.isNotEmpty(fromDate)) {
 			jql += " AND created>=\"" + fromDate + "\"";
 		}
 		if (StringUtils.isNotEmpty(toDate)) {
 			jql += " AND created<=\"" + toDate + "\"";
+		}
+		if (statuses != null && statuses.length > 0) {
+			jql += " AND status in (" + StringUtils.join(statuses, ",") + ")";
 		}
 		try {
 			jql = URLEncoder.encode(jql, "UTF-8");

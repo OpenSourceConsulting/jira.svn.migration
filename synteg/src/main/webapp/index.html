@@ -97,11 +97,11 @@
 										<fieldset>
 											<div class="row">
 												<section class="col col-4">
-													<label class="label">Project</label> <label class="select">
+													<label class="label">Project <span style="color:red;">(*)</span></label> <label class="select">
 														<select id="projectList"></select> <i></i>
 													</label>
 												</section>
-												<section class="col col-3">
+											<section class="col col-3">
 													<label class="label">From</label> <label class="input">
 														<i class="icon-append fa fa-calendar"></i> <input
 														type="text" name="fromdate" id="fromdate"
@@ -114,6 +114,14 @@
 														type="text" name="todate" id="todate" placeholder="To">
 													</label>
 												</section>
+											</div>
+											<div class="row">
+												<section class="col col-10">
+													<label class="label">Status</label> 
+													<div class="inline-group" id="statusList">
+													</div>
+												</section>
+												
 											</div>
 										</fieldset>
 										<footer>
@@ -193,6 +201,7 @@
 				.ready(
 						function() {
 							getProjectList("projectList");
+							getStatusList("statusList")
 							// START AND FINISH DATE
 							$('#fromdate')
 									.datepicker(
@@ -368,10 +377,17 @@
 												var fromDate = $("#fromdate")
 														.val();
 												var toDate = $("#todate").val();
+												//get status from checkboxes
+												var statuses = $('#statusList > label > input[name="checkbox-inline[]"]:checked').map(function() {
+												    return this.value;
+												}).get();
+												if(statuses===""){
+													statuses = null;
+												}
 												var fields = "id,key,summary,created,updated,status";
 												filterIssues("issueList",
 														projectId, fromDate,
-														toDate, fields);
+														toDate, statuses, fields);
 												e.preventDefault();
 											});
 						});

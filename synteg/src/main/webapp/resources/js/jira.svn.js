@@ -21,8 +21,36 @@ function getProjectList(selectId) {
 		}
 	});
 }
+function getStatusList(statusDivId) {
+	var statusDiv = $("#" + statusDivId);
+	var url = CONTEXT_PATH + "/api/statuses";
+	$
+			.ajax({
+				url : url,
+				success : function(json) {
+					if (json.success) {
+						var checkboxes = "";
+						$
+								.each(
+										json.list,
+										function(k, v) {
+											checkboxes += "<label class='checkbox'><input type='checkbox' name='checkbox-inline[]' value="
+													+ v.id
+													+ "><i></i>"
+													+ v.name + "</label>";
+										});
+						statusDiv.html(checkboxes);
+					} else {
+						alert(json.msg)
+					}
+				},
+				error : function(e) {
+					alert(e.msg);
+				}
+			});
 
-function filterIssues(gridId, projectId, fromDate, toDate, fields) {
+}
+function filterIssues(gridId, projectId, fromDate, toDate, statuses, fields) {
 	var url = CONTEXT_PATH + "/api/issues/filter";
 	var data = [];
 
@@ -44,6 +72,7 @@ function filterIssues(gridId, projectId, fromDate, toDate, fields) {
 				"projectId" : projectId,
 				"fromDate" : fromDate,
 				"toDate" : toDate,
+				"statuses[]" :statuses,
 				"fields" : fields
 			},
 			success : function(json) {
