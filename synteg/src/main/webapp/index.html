@@ -101,14 +101,25 @@
 														<select id="projectList"></select> <i></i>
 													</label>
 												</section>
-											<section class="col col-3">
+											<section class="col col-2">
+												<label class="label">Date Field </label> <label class="select">
+														<select id="dateField">
+															<option value="created">Created</option>
+															<option value="due">Due date</option>
+															<option value="lastViewed">Last viewed</option>
+															<option value="resolved">Resolved</option>
+															<option value="updated">Updated</option>
+														</select> <i></i>
+													</label>
+											</section>
+											<section class="col col-2">
 													<label class="label">From</label> <label class="input">
 														<i class="icon-append fa fa-calendar"></i> <input
 														type="text" name="fromdate" id="fromdate"
 														placeholder="From">
 													</label>
 												</section>
-												<section class="col col-3">
+												<section class="col col-2">
 													<label class="label">To</label> <label class="input">
 														<i class="icon-append fa fa-calendar"></i> <input
 														type="text" name="todate" id="todate" placeholder="To">
@@ -384,10 +395,11 @@
 												if(statuses===""){
 													statuses = null;
 												}
+												var dateFieldType = $("#dateField").val();
 												var fields = "id,key,summary,created,updated,status";
 												filterIssues("issueList",
 														projectId, fromDate,
-														toDate, statuses, fields);
+														toDate, statuses,dateFieldType, fields);
 												e.preventDefault();
 											});
 						});

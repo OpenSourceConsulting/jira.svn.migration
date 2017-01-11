@@ -50,7 +50,8 @@ function getStatusList(statusDivId) {
 			});
 
 }
-function filterIssues(gridId, projectId, fromDate, toDate, statuses, fields) {
+function filterIssues(gridId, projectId, fromDate, toDate, statuses,
+		dateFieldType, fields) {
 	var url = CONTEXT_PATH + "/api/issues/filter";
 	var data = [];
 
@@ -72,7 +73,8 @@ function filterIssues(gridId, projectId, fromDate, toDate, statuses, fields) {
 				"projectId" : projectId,
 				"fromDate" : fromDate,
 				"toDate" : toDate,
-				"statuses[]" :statuses,
+				"statuses[]" : statuses,
+				"dateFieldType":dateFieldType,
 				"fields" : fields
 			},
 			success : function(json) {

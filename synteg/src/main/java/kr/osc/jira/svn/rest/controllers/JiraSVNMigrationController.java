@@ -3,6 +3,7 @@
  */
 package kr.osc.jira.svn.rest.controllers;
 
+import java.awt.datatransfer.StringSelection;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -179,13 +180,17 @@ public class JiraSVNMigrationController implements InitializingBean {
 	@RequestMapping("/api/issues/filter")
 	@ResponseBody
 	public GridJsonResponse search(GridJsonResponse json, String projectId, String fromDate, String toDate,
-			@RequestParam(value = "statuses[]", required = false) Integer[] statuses, String fields) {
+			@RequestParam(value = "statuses[]", required = false) Integer[] statuses, String dateFieldType, String fields) {
 		String jql = "project=" + projectId;
+		//check date type : created, updated, due date, lastViewed, resolved,
+		if (StringUtils.isEmpty(dateFieldType) || dateFieldType == null) {
+			dateFieldType = "created";
+		}
 		if (StringUtils.isNotEmpty(fromDate)) {
-			jql += " AND created>=\"" + fromDate + "\"";
+			jql += " AND " + dateFieldType + " >= \"" + fromDate + "\"";
 		}
 		if (StringUtils.isNotEmpty(toDate)) {
-			jql += " AND created<=\"" + toDate + "\"";
+			jql += " AND " + dateFieldType + " <= \"" + toDate + "\"";
 		}
 		if (statuses != null && statuses.length > 0) {
 			jql += " AND status in (" + StringUtils.join(statuses, ",") + ")";
